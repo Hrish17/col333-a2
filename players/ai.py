@@ -56,6 +56,8 @@ class AIPlayer:
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
+        if node.visits == 0:
+            return float('inf')
         exploitation = node.value / node.visits
         exploration = math.sqrt(math.log(parent_visits) / node.visits)
         return exploitation + self.c * exploration
