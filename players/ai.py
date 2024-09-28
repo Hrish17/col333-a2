@@ -31,7 +31,7 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
-        self.max_time = 8 # seconds
+        self.max_time = 12 # seconds
         self.c = 1.414
 
     def get_move(self, state: np.array) -> Tuple[int, int]:
