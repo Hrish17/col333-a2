@@ -52,8 +52,8 @@ class AIPlayer:
         """
 
         # Do the rest of your implementation here
-        # raise NotImplementedError('Whoops I don\'t know what to do')
-
+        if state[state == 1].size == 0 and state[state == 2].size == 0:
+            return (0,0)
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
