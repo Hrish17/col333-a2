@@ -100,6 +100,7 @@ class AIPlayer:
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
                         child.parent = node
+                        child.action = action
                         node.children.append(child)
                     value = self.rollout(node.children[0])
 
@@ -117,20 +118,27 @@ class AIPlayer:
     def rollout(self, node: MCTS_Node) -> float:
         current_state = np.copy(node.state)
         current_player = node.player
+        current_node = np.copy(node)
 
         while True:
+            if check_win(current_state, current_node.action, 3-current_player):
+                return -1 if current_player == self.player_number else 1
             possible_actions = get_valid_actions(current_state)
             if not possible_actions:
                 return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
             action = random.choice(possible_actions)
             current_state = self.get_next_state(current_state, action, current_player)
-            if check_win(current_state, action, current_player):
-                return 1 if current_player == self.player_number else -1
+            for child in current_node.children:
+                if np.array_equal(child.state, current_state):
+                    current_node = child
+                    break
             current_player = 3 - current_player
 
     def backpropagate(self, node: MCTS_Node, value: float):
         while node:
             node.visits += 1
-            node.value += value
+            if node.player == self.player_number:
+                node.value -= value
+            else:
+                node.value += value
             node = node.parent
-            value *= -1
