@@ -81,8 +81,8 @@ class AIPlayer:
             print(child.state)
             print(root.state)
             print(action)
-            if check_win(child.state, action, self.player_number):
-                print('flag 1')
+            hasWon, _ = check_win(child.state, action, self.player_number)
+            if hasWon:
                 return action
             child.player = 3 - self.player_number
             child.parent = root
