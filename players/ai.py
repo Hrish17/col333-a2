@@ -136,10 +136,7 @@ class AIPlayer:
             # create a new node
             new_node = MCTS_Node(0, 0)
             new_node.state = np.copy(current_state)
-            new_node.player = 3 - current_player
-            new_node.parent = current_node
             new_node.action = action
-            current_node.children.append(new_node)
             current_node = new_node
             current_player = 3 - current_player
 
