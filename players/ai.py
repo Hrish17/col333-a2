@@ -32,7 +32,7 @@ class AIPlayer:
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
         self.max_time = 12 # seconds
-        self.c = 1.414
+        self.c = 2
 
     def get_move(self, state: np.array) -> Tuple[int, int]:
         """
@@ -105,11 +105,11 @@ class AIPlayer:
                         child.parent = node
                         child.action = action
                         node.children.append(child)
-                    value = self.rollout(node.children[0])
+                    value = self.rollout(random.choice(node.children))
 
             self.backpropagate(node, value)
 
-        best_node = max(root.children, key=lambda x: x.value)
+        best_node = max(root.children, key=lambda x: x.visits)
         # print("flag 2")
         return best_node.action
 
