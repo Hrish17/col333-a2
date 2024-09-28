@@ -42,4 +42,3 @@ class AIPlayer:
 
         # Do the rest of your implementation here
         raise NotImplementedError('Whoops I don\'t know what to do')
-
