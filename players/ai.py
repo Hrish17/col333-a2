@@ -73,19 +73,22 @@ class AIPlayer:
         possible_actions = get_valid_actions(state)
         
         root = MCTS_Node(0, 0)
-        root.state = state
+        root.state = np.copy(state)
         root.player = self.player_number
         for action in possible_actions:
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(state, action, self.player_number)
             if check_win(child.state, action, self.player_number):
+                print('flag 1')
                 return action
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
             root.children.append(child)
 
-        while (time.time() - start_time) < self.max_time:
+        # time limit for MCTS in seconds
+        while time.time() - start_time < self.max_time:
+            print('time:', time.time() - start_time)
             node = self.traverse(root)
             if node.visits == 0:
                 value = self.rollout(node)
@@ -107,6 +110,7 @@ class AIPlayer:
             self.backpropagate(node, value)
 
         best_node = max(root.children, key=lambda x: x.value)
+        print("flag 2")
         return best_node.action
 
 
