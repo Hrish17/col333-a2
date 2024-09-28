@@ -52,7 +52,7 @@ class AIPlayer:
         """
 
         # Do the rest of your implementation here
-        if state[state == 1].size == 0 and state[state == 2].size == 0:
+        if len(np.argwhere(state == 1)) == 0 and len(np.argwhere(state == 2)) == 0:
             return (0,0)
         return self.mcts(state)
     
