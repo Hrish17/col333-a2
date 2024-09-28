@@ -80,7 +80,7 @@ class AIPlayer:
             child.action = action
             root.children.append(child)
 
-        while time.time() - start_time < self.max_time:
+        while (time.time() - start_time) < self.max_time:
             node = self.traverse(root)
             if node.visits == 0:
                 value = self.rollout(node)
@@ -99,7 +99,7 @@ class AIPlayer:
 
             self.backpropagate(node, value)
 
-        best_node = max(root.children, key=lambda x: x.visits)
+        best_node = max(root.children, key=lambda x: x.value)
         return best_node.action
 
 
@@ -129,4 +129,4 @@ class AIPlayer:
             node.visits += 1
             node.value += value
             node = node.parent
-            value *= -1    
+            # value *= -1    
