@@ -78,6 +78,9 @@ class AIPlayer:
         for action in possible_actions:
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(state, action, self.player_number)
+            print(child.state)
+            print(root.state)
+            print(action)
             if check_win(child.state, action, self.player_number):
                 print('flag 1')
                 return action
