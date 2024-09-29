@@ -54,6 +54,15 @@ class AIPlayer:
         # Do the rest of your implementation here
         if len(np.argwhere(state == 1)) == 0 and len(np.argwhere(state == 2)) == 0:
             return (0,0)
+        # get dimensions of the board
+        if state.shape[0] == 7:
+            moves_played = len(np.argwhere(state == 1))
+            if moves_played <= 4:
+                self.max_time = 18
+            elif moves_played <= 8:
+                self.max_time = 14
+            else:
+                self.max_time = 10
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
@@ -80,6 +89,10 @@ class AIPlayer:
             child.state = self.get_next_state(state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
+                return action
+            opponent_state = self.get_next_state(state, action, 3 - self.player_number)
+            has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
+            if has_opponent_won:
                 return action
             child.player = 3 - self.player_number
             child.parent = root
