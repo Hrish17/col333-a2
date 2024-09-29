@@ -77,6 +77,35 @@ class AIPlayer:
         new_state[action[0], action[1]] = player_number
         return new_state
     
+    def get_num_kites(self, board, action):
+        x, y = action[0], action[1]
+        dims = board.shape[0]
+        count = 0
+        dirs = [[(-2,-1), (-1,-1), (-1,0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)], [(1,1), (0,1), (1, 0)], [(1,-1), (0,-1), (1, 0)], [(-1,-2), (-1,-1), (0,-1)]]
+        for dir in dirs:
+            all_valid = True
+            for d in dir:
+                if not is_valid(x + d[0], y + d[1], dims):
+                    all_valid = False
+                    break
+            if not all_valid:
+                continue
+
+            if board[x + dir[0][0], y + dir[0][1]] == self.player_number:
+                a , b = 0, 0
+                if board[x + dir[1][0], y + dir[1][1]] == self.player_number:
+                    a += 1
+                elif board[x + dir[1][0], y + dir[1][1]] == 3 - self.player_number:
+                    b += 1
+                if board[x + dir[2][0], y + dir[2][1]] == self.player_number:
+                    a += 1
+                elif board[x + dir[2][0], y + dir[2][1]] == 3 - self.player_number:
+                    b += 1
+                if (a >= b):
+                    count += 1
+        return count
+
+    
     def mcts(self, state: np.array) -> Tuple[int, int]:
         start_time = time.time()
         possible_actions = get_valid_actions(state)
@@ -94,6 +123,8 @@ class AIPlayer:
             has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
                 return action
+            kites = self.get_num_kites(child.state, action)
+            child.value = kites * 0.1
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -115,6 +146,11 @@ class AIPlayer:
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
+                        kites = self.get_num_kites(child.state, action)
+                        if child.player == self.player_number:
+                            child.value -= kites * 0.1
+                        else:
+                            child.value += kites * 0.1
                         child.parent = node
                         child.action = action
                         node.children.append(child)
