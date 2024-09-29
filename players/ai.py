@@ -110,7 +110,25 @@ class AIPlayer:
         else:
             return 0.1
 
-    
+    def ignore_kite_heuristic(self, board, action, player):
+        x, y = action[0], action[1]
+        c1, c2 = 0, 0
+        dirs1 = [(-1,0), (0,-1), (0,1)]
+        dirs2 = [(-1,-1), (-1,1), (1,0)]
+        dims = board.shape[0]
+        for dir in dirs1:
+            if is_valid(x + dir[0], y + dir[1], dims):
+                if board[x + dir[0], y + dir[1]] == 3 - player:
+                    c1 += 1
+        for dir in dirs2:
+            if is_valid(x + dir[0], y + dir[1], dims):
+                if board[x + dir[0], y + dir[1]] == 3 - player:
+                    c2 += 1
+        if c1 > 1 or c2 > 1:
+            return -0.1
+        else:
+            return 0
+            
     def mcts(self, state: np.array) -> Tuple[int, int]:
         start_time = time.time()
         possible_actions = get_valid_actions(state)
@@ -129,7 +147,9 @@ class AIPlayer:
             if has_opponent_won:
                 return action
             heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+            heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
             child.value = heuristic1
+            child.value += heuristic2
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -152,10 +172,13 @@ class AIPlayer:
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
                         heuristic1 = self.kite_heuristic(child.state, action, node.player)
+                        heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                         if child.player == self.player_number:
                             child.value -= heuristic1
+                            child.value -= heuristic2
                         else:
                             child.value += heuristic1
+                            child.value += heuristic2
                         child.parent = node
                         child.action = action
                         node.children.append(child)
@@ -166,7 +189,6 @@ class AIPlayer:
         best_node = max(root.children, key=lambda x: x.visits)
         # print("flag 2")
         return best_node.action
-
 
     def traverse(self, node: MCTS_Node) -> MCTS_Node:
         while node.children:
