@@ -60,9 +60,9 @@ class AIPlayer:
             if moves_played <= 4:
                 self.max_time = 18
             elif moves_played <= 8:
-                self.max_time = 14
+                self.max_time = 15
             else:
-                self.max_time = 10
+                self.max_time = 12
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
