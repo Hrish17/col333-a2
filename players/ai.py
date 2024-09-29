@@ -77,7 +77,7 @@ class AIPlayer:
         new_state[action[0], action[1]] = player_number
         return new_state
     
-    def get_num_kites(self, board, action, player):
+    def kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
         dims = board.shape[0]
         count = 0
@@ -103,7 +103,12 @@ class AIPlayer:
                     b += 1
                 if (a >= b):
                     count += 1
-        return count
+        if count == 0:
+            return 0
+        elif count == 1:
+            return 0.05
+        else:
+            return 0.1
 
     
     def mcts(self, state: np.array) -> Tuple[int, int]:
@@ -123,8 +128,8 @@ class AIPlayer:
             has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
                 return action
-            kites = self.get_num_kites(child.state, action, self.player_number)
-            child.value = kites * 0.1
+            heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+            child.value = heuristic1
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -146,11 +151,11 @@ class AIPlayer:
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
-                        kites = self.get_num_kites(child.state, action, node.player)
+                        heuristic1 = self.kite_heuristic(child.state, action, node.player)
                         if child.player == self.player_number:
-                            child.value -= kites * 0.1
+                            child.value -= heuristic1
                         else:
-                            child.value += kites * 0.1
+                            child.value += heuristic1
                         child.parent = node
                         child.action = action
                         node.children.append(child)
