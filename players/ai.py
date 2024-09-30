@@ -13,6 +13,7 @@ class MCTS_Node:
         self.state = None
         self.action = None
         self.player = None
+        self.possible_actions = []
 
 class AIPlayer:
 
@@ -136,6 +137,7 @@ class AIPlayer:
         root = MCTS_Node(0, 0)
         root.state = np.copy(state)
         root.player = self.player_number
+        root.possible_actions = possible_actions
         for action in possible_actions:
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(state, action, self.player_number)
@@ -153,6 +155,8 @@ class AIPlayer:
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
+            child.possible_actions = child.parent.possible_actions.copy()
+            child.possible_actions.remove(child.action)
             root.children.append(child)
 
         # time limit for MCTS in seconds
@@ -163,7 +167,7 @@ class AIPlayer:
                 value = self.rollout(node)
             else:
                 # expand
-                possible_actions = get_valid_actions(node.state)
+                possible_actions = node.possible_actions
                 if not possible_actions:
                     value = fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
                 else:
@@ -181,6 +185,8 @@ class AIPlayer:
                             child.value += heuristic2
                         child.parent = node
                         child.action = action
+                        child.possible_actions = child.parent.possible_actions.copy()
+                        child.possible_actions.remove(child.action)
                         node.children.append(child)
                     value = self.rollout(random.choice(node.children))
 
@@ -204,7 +210,8 @@ class AIPlayer:
             hasWon, _ = check_win(current_state, current_node.action, 3-current_player)
             if hasWon:
                 return -1 if current_player == self.player_number else 1
-            possible_actions = get_valid_actions(current_state)
+            # possible_actions = get_valid_actions(current_state)
+            possible_actions = current_node.possible_actions
             if not possible_actions:
                 return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
             action = random.choice(possible_actions)
@@ -213,6 +220,7 @@ class AIPlayer:
             new_node = MCTS_Node(0, 0)
             new_node.state = np.copy(current_state)
             new_node.action = action
+            new_node.possible_actions = node.possible_actions.remove(action)
             current_node = new_node
             current_player = 3 - current_player
 
