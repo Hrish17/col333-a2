@@ -34,6 +34,7 @@ class AIPlayer:
         self.timer = timer
         self.max_time = 12 # seconds
         self.c = 2
+        self.total_time = 0
 
     def get_move(self, state: np.array) -> Tuple[int, int]:
         """
@@ -54,16 +55,36 @@ class AIPlayer:
 
         # Do the rest of your implementation here
         if len(np.argwhere(state == 1)) == 0 and len(np.argwhere(state == 2)) == 0:
+            # set the total time
+            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            # play on a corner
             return (0,0)
+        
+        # trying to block bridge of the opponent
+        if len(np.argwhere(state = self.player_number)) == 0 and len(np.argwhere(state = 3 - self.player_number)) and state.shape[0] == 7:
+            # set the total time
+            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            # if the opponent played on a corner
+            x, y = np.argwhere(state == 3 - self.player_number)[0]
+            is_corner = get_corner(x, y, state.shape[0])
+            if is_corner != -1: # i.e. opponent played on a corner
+                # play on one of the neighbours
+                neighbours = get_neighbours(state.shape[0], x, y)
+                return neighbours[0]
+
         # get dimensions of the board
         if state.shape[0] == 7:
-            moves_played = len(np.argwhere(state == 1))
-            if moves_played <= 4:
-                self.max_time = 18
-            elif moves_played <= 8:
-                self.max_time = 15
+            # playing with random player
+            if self.total_time <= 240:
+                self.max_time = 10
             else:
-                self.max_time = 12
+                moves_played = len(np.argwhere(state == 1))
+                if moves_played <= 4:
+                    self.max_time = 18
+                elif moves_played <= 10:
+                    self.max_time = 20
+                else:
+                    self.max_time = 16
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
