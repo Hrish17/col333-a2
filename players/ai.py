@@ -61,7 +61,7 @@ class AIPlayer:
             return (0,0)
         
         # trying to block bridge of the opponent
-        if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shapte[0] == 7:
+        if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shape[0] == 7:
             # set the total time
             self.total_time = fetch_remaining_time(self.timer, self.player_number)
             # if the opponent played on a corner
