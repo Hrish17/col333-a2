@@ -70,7 +70,7 @@ class AIPlayer:
             if is_corner != -1: # i.e. opponent played on a corner
                 # play on one of the neighbours
                 neighbours = get_neighbours(state.shape[0], (x, y))
-                return neighbours[0]
+                return neighbours[1]
 
         # get dimensions of the board
         if state.shape[0] == 7:
@@ -79,12 +79,12 @@ class AIPlayer:
                 self.max_time = 10
             else:
                 moves_played = len(np.argwhere(state == 1))
-                if moves_played <= 4:
-                    self.max_time = 18
-                elif moves_played <= 10:
-                    self.max_time = 20
+                if moves_played < 5:
+                    self.max_time = 21
+                elif moves_played < 12:
+                    self.max_time = 23
                 else:
-                    self.max_time = 16
+                    self.max_time = 15
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:

@@ -2,9 +2,9 @@ import subprocess
 import concurrent.futures
 
 # Define the command as a function
-times=6
+times=10
 def run_game():
-    command = ["python3", "game.py", "ai2", "ai", "--dim", "4", "--time", "240"]
+    command = ["python3", "game.py", "ai2", "ai", "--dim", "4", "--time", "360"]
     result = subprocess.run(command, capture_output=True, text=True)
     return result.stdout
 
