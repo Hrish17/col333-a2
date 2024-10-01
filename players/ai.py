@@ -4,6 +4,7 @@ import random
 import numpy as np
 from helper import *
 
+
 class MCTS_Node:
     def __init__(self, visits, value):
         self.visits = visits
@@ -15,6 +16,7 @@ class MCTS_Node:
         self.player = None
         self.possible_actions = []
 
+
 class AIPlayer:
 
     def __init__(self, player_number: int, timer):
@@ -23,7 +25,7 @@ class AIPlayer:
 
         # Parameters
         `player_number (int)`: Current player number, num==1 starts the game
-        
+
         `timer: Timer`
             - a Timer object that can be used to fetch the remaining time for any player
             - Run `fetch_remaining_time(timer, player_number)` to fetch remaining time of a player
@@ -32,7 +34,7 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
-        self.max_time = 12 # seconds
+        self.max_time = 12  # seconds
         self.c = 2
         self.total_time = 0
 
@@ -56,18 +58,20 @@ class AIPlayer:
         # Do the rest of your implementation here
         if len(np.argwhere(state == 1)) == 0 and len(np.argwhere(state == 2)) == 0:
             # set the total time
-            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            self.total_time = fetch_remaining_time(
+                self.timer, self.player_number)
             # play on a corner
-            return (0,0)
-        
+            return (0, 0)
+
         # trying to block bridge of the opponent
         if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shape[0] == 7:
             # set the total time
-            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            self.total_time = fetch_remaining_time(
+                self.timer, self.player_number)
             # if the opponent played on a corner
             x, y = np.argwhere(state == 3 - self.player_number)[0]
             is_corner = get_corner((x, y), state.shape[0])
-            if is_corner != -1: # i.e. opponent played on a corner
+            if is_corner != -1:  # i.e. opponent played on a corner
                 # play on one of the neighbours
                 neighbours = get_neighbours(state.shape[0], (x, y))
                 return neighbours[2]
@@ -93,27 +97,28 @@ class AIPlayer:
                 self.max_time = 18
             elif moves_played < 20:
                 self.max_time = 15
-            else:   
+            else:
                 self.max_time = 10
         return self.mcts(state)
-    
+
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
         if node.visits == 0:
             return float('inf')
         exploitation = node.value / node.visits
         exploration = math.sqrt(math.log(parent_visits) / node.visits)
         return exploitation + self.c * exploration
-    
+
     def get_next_state(self, state: np.array, action: Tuple[int, int], player_number: int) -> np.array:
         new_state = np.copy(state)
         new_state[action[0], action[1]] = player_number
         return new_state
-    
+
     def kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
         dims = board.shape[0]
         count = 0
-        dirs = [[(-2,-1), (-1,-1), (-1,0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)], [(1,1), (0,1), (1, 0)], [(1,-1), (0,-1), (1, 0)], [(-1,-2), (-1,-1), (0,-1)]]
+        dirs = [[(-2, -1), (-1, -1), (-1, 0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)],
+                [(1, 1), (0, 1), (1, 0)], [(1, -1), (0, -1), (1, 0)], [(-1, -2), (-1, -1), (0, -1)]]
         for dir in dirs:
             all_valid = True
             for d in dir:
@@ -124,7 +129,7 @@ class AIPlayer:
                 continue
 
             if board[x + dir[0][0], y + dir[0][1]] == player:
-                a , b = 0, 0
+                a, b = 0, 0
                 if board[x + dir[1][0], y + dir[1][1]] == player:
                     a += 1
                 elif board[x + dir[1][0], y + dir[1][1]] == 3 - player:
@@ -143,8 +148,8 @@ class AIPlayer:
     def ignore_kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
         c1, c2 = 0, 0
-        dirs1 = [(-1,0), (0,-1), (0,1)]
-        dirs2 = [(-1,-1), (-1,1), (1,0)]
+        dirs1 = [(-1, 0), (0, -1), (0, 1)]
+        dirs2 = [(-1, -1), (-1, 1), (1, 0)]
         dims = board.shape[0]
         for dir in dirs1:
             if is_valid(x + dir[0], y + dir[1], dims):
@@ -158,28 +163,47 @@ class AIPlayer:
             return -10
         else:
             return 0
-            
+
+    def to_be_moved_in_6(self, board, action):
+        x, y = action[0], action[1]
+        dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
+        dirs_kite = [(-2, -1), (-2, 1), (-1, 2), (1, 1), (1, -1), (-1, -2)]
+        dirs_next_to_kite = [(-2, 0), (-2, 2), (0, 2),
+                             (2, 0), (0, -2), (-2, -2)]
+        dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),
+                    (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
+        dirs = dirs_closest + dirs_kite + dirs_next_to_kite + dirs_far
+        for dir in dirs:
+            if (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2):
+                return True
+
     def mcts(self, state: np.array) -> Tuple[int, int]:
         start_time = time.time()
         possible_actions = get_valid_actions(state)
-        
+
         root = MCTS_Node(0, 0)
         root.state = np.copy(state)
         root.player = self.player_number
         root.possible_actions = possible_actions
         for action in possible_actions:
+            if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
+                continue
             child = MCTS_Node(0, 0)
-            child.state = self.get_next_state(state, action, self.player_number)
+            child.state = self.get_next_state(
+                state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
                 print("flag 1")
                 return action
-            opponent_state = self.get_next_state(state, action, 3 - self.player_number)
-            has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
+            opponent_state = self.get_next_state(
+                state, action, 3 - self.player_number)
+            has_opponent_won, _ = check_win(
+                opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
                 print("flag 2")
                 return action
-            heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+            heuristic1 = self.kite_heuristic(
+                child.state, action, self.player_number)
             # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
             child.value = heuristic1
             # child.value += heuristic2
@@ -202,13 +226,18 @@ class AIPlayer:
                 # expand
                 possible_actions = node.possible_actions.copy()
                 if not possible_actions:
-                    value = fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
+                    value = fetch_remaining_time(
+                        self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
                 else:
                     for action in possible_actions:
+                        if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
+                            continue
                         child = MCTS_Node(0, 0)
-                        child.state = self.get_next_state(node.state, action, self.player_number)
+                        child.state = self.get_next_state(
+                            node.state, action, self.player_number)
                         child.player = 3 - node.player
-                        heuristic1 = self.kite_heuristic(child.state, action, node.player)
+                        heuristic1 = self.kite_heuristic(
+                            child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                         if child.player == self.player_number:
                             child.value -= heuristic1
@@ -234,14 +263,15 @@ class AIPlayer:
         while node.children:
             node = max(node.children, key=lambda x: self.ucb1(x, node.visits))
         return node
-    
+
     def rollout(self, node: MCTS_Node) -> float:
         current_state = np.copy(node.state)
         current_player = node.player
         current_node = node
 
         while True:
-            hasWon, _ = check_win(current_state, current_node.action, 3-current_player)
+            hasWon, _ = check_win(
+                current_state, current_node.action, 3-current_player)
             if hasWon:
                 return -1 if current_player == self.player_number else 1
             # possible_actions = get_valid_actions(current_state)
@@ -249,7 +279,8 @@ class AIPlayer:
             if not possible_actions:
                 return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
             action = random.choice(possible_actions)
-            current_state = self.get_next_state(current_state, action, current_player)
+            current_state = self.get_next_state(
+                current_state, action, current_player)
             # create a new node
             new_node = MCTS_Node(0, 0)
             new_node.state = np.copy(current_state)
