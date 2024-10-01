@@ -1,0 +1,4 @@
+# add pycache present in any directory
+**/__pycache__/
+__pycache__/
+logs.txt
