@@ -276,7 +276,7 @@ class AIPlayer:
             if not possible_actions:
                 return 0.5
             action = random.choice(possible_actions)
-            current_state = current_state[action[0]][action[1]]
+            current_state[action[0]][action[1]] = current_player
             # create a new node
             current_node.state = current_state
             current_state.action = action
