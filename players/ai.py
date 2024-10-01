@@ -94,11 +94,11 @@ class AIPlayer:
             if moves_played < 5:
                 self.max_time = 22
             elif moves_played < 12:
-                self.max_time = 18
+                self.max_time = 19
             elif moves_played < 20:
-                self.max_time = 15
+                self.max_time = 16
             else:
-                self.max_time = 10
+                self.max_time = 19
         return self.mcts(state)
 
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
@@ -279,7 +279,7 @@ class AIPlayer:
             current_state[action[0]][action[1]] = current_player
             # create a new node
             current_node.state = current_state
-            current_state.action = action
+            current_node.action = action
             current_node.possible_actions.remove(action)
             current_player = 3 - current_player
 
