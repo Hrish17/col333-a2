@@ -66,15 +66,23 @@ class AIPlayer:
         # trying to block bridge of the opponent
         if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shape[0] == 7:
             # set the total time
-            self.total_time = fetch_remaining_time(
-                self.timer, self.player_number)
+            self.total_time = fetch_remaining_time(self.timer, self.player_number)
             # if the opponent played on a corner
             x, y = np.argwhere(state == 3 - self.player_number)[0]
-            is_corner = get_corner((x, y), state.shape[0])
-            if is_corner != -1:  # i.e. opponent played on a corner
-                # play on one of the neighbours
-                neighbours = get_neighbours(state.shape[0], (x, y))
-                return neighbours[2]
+            is_corner = get_corner((x,y), state.shape[0])
+            if is_corner != 0:
+                if (x,y) == (0,0):
+                    return (0,3)
+                elif (x,y) == (0,3):
+                    return (0,0)
+                elif (x,y) == (0,6):
+                    return (3,6)
+                elif (x,y) == (3,6):
+                    return  (0,6)
+                elif (x,y) == (3,0):
+                    return (6,3)
+                elif (x,y) == (6,3):
+                    return (3,0)
 
         # get dimensions of the board
         if state.shape[0] == 7:
@@ -268,19 +276,24 @@ class AIPlayer:
         current_node = node
 
         while True:
-            hasWon, _ = check_win(current_state, current_node.action, 3-current_player)
+            hasWon, _ = check_win(
+                current_state, current_node.action, 3-current_player)
             if hasWon:
                 return -1 if current_player == self.player_number else 1
             # possible_actions = get_valid_actions(current_state)
             possible_actions = current_node.possible_actions.copy()
             if not possible_actions:
-                return 0.5
+                return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
             action = random.choice(possible_actions)
-            current_state[action[0]][action[1]] = current_player
+            current_state = self.get_next_state(
+                current_state, action, current_player)
             # create a new node
-            current_node.state = current_state
-            current_node.action = action
-            current_node.possible_actions.remove(action)
+            new_node = MCTS_Node(0, 0)
+            new_node.state = np.copy(current_state)
+            new_node.action = action
+            new_node.possible_actions = node.possible_actions.copy()
+            new_node.possible_actions.remove(new_node.action)
+            current_node = new_node
             current_player = 3 - current_player
 
     def backpropagate(self, node: MCTS_Node, value: float):
