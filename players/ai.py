@@ -227,15 +227,13 @@ class AIPlayer:
                 # expand
                 possible_actions = node.possible_actions.copy()
                 if not possible_actions:
-                    value = fetch_remaining_time(
-                        self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
+                    value = 0.5
                 else:
                     for action in possible_actions:
                         if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
                             continue
                         child = MCTS_Node(0, 0)
-                        child.state = self.get_next_state(
-                            node.state, action, self.player_number)
+                        child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
                         # heuristic1 = self.kite_heuristic(child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
@@ -270,24 +268,19 @@ class AIPlayer:
         current_node = node
 
         while True:
-            hasWon, _ = check_win(
-                current_state, current_node.action, 3-current_player)
+            hasWon, _ = check_win(current_state, current_node.action, 3-current_player)
             if hasWon:
                 return -1 if current_player == self.player_number else 1
             # possible_actions = get_valid_actions(current_state)
             possible_actions = current_node.possible_actions.copy()
             if not possible_actions:
-                return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
+                return 0.5
             action = random.choice(possible_actions)
-            current_state = self.get_next_state(
-                current_state, action, current_player)
+            current_state = current_state[action[0]][action[1]]
             # create a new node
-            new_node = MCTS_Node(0, 0)
-            new_node.state = np.copy(current_state)
-            new_node.action = action
-            new_node.possible_actions = node.possible_actions.copy()
-            new_node.possible_actions.remove(new_node.action)
-            current_node = new_node
+            current_node.state = current_state
+            current_state.action = action
+            current_node.possible_actions.remove(action)
             current_player = 3 - current_player
 
     def backpropagate(self, node: MCTS_Node, value: float):
