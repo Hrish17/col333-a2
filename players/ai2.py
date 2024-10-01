@@ -133,7 +133,7 @@ class AIPlayer:
                     a += 1
                 elif board[x + dir[2][0], y + dir[2][1]] == 3 - player:
                     b += 1
-                if (a >= b):
+                if (a == 0) and (b == 0):
                     count += 1
         if count == 0:
             return 0
