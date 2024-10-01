@@ -78,13 +78,23 @@ class AIPlayer:
             if self.total_time <= 240:
                 self.max_time = 10
             else:
-                moves_played = len(np.argwhere(state == 1))
+                moves_played = len(np.argwhere(state == self.player_number))
                 if moves_played < 5:
                     self.max_time = 21
                 elif moves_played < 12:
                     self.max_time = 23
                 else:
                     self.max_time = 15
+        else:
+            moves_played = len(np.argwhere(state == self.player_number))
+            if moves_played < 5:
+                self.max_time = 22
+            elif moves_played < 12:
+                self.max_time = 18
+            elif moves_played < 20:
+                self.max_time = 15
+            else:   
+                self.max_time = 10
         return self.mcts(state)
     
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
@@ -127,10 +137,8 @@ class AIPlayer:
                     count += 1
         if count == 0:
             return 0
-        elif count == 1:
-            return 0.05
         else:
-            return 0.1
+            return 10
 
     def ignore_kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
@@ -147,7 +155,7 @@ class AIPlayer:
                 if board[x + dir[0], y + dir[1]] == 3 - player:
                     c2 += 1
         if c1 > 1 or c2 > 1:
-            return -0.1
+            return -10
         else:
             return 0
             
@@ -171,9 +179,9 @@ class AIPlayer:
             if has_opponent_won:
                 print("flag 2")
                 return action
-            # heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+            heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
             # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
-            # child.value = heuristic1
+            child.value = heuristic1
             # child.value += heuristic2
             child.player = 3 - self.player_number
             child.parent = root
@@ -200,14 +208,14 @@ class AIPlayer:
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
-                        # heuristic1 = self.kite_heuristic(child.state, action, node.player)
+                        heuristic1 = self.kite_heuristic(child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
-                        # if child.player == self.player_number:
-                        #     child.value -= heuristic1
-                        #     child.value -= heuristic2
-                        # else:
-                        #     child.value += heuristic1
-                        #     child.value += heuristic2
+                        if child.player == self.player_number:
+                            child.value -= heuristic1
+                            # child.value -= heuristic2
+                        else:
+                            child.value += heuristic1
+                            # child.value += heuristic2
                         child.parent = node
                         child.action = action
                         child.possible_actions = child.parent.possible_actions.copy()
