@@ -175,8 +175,8 @@ class AIPlayer:
         dirs = dirs_closest + dirs_kite + dirs_next_to_kite + dirs_far
         for dir in dirs:
             if (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2):
-                return False
-        return True
+                return True
+        return False
 
     def mcts(self, state: np.array) -> Tuple[int, int]:
         start_time = time.time()
