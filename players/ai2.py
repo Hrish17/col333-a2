@@ -3,73 +3,18 @@ import math
 import random
 import numpy as np
 from helper import *
-from typing import Tuple, List, Optional
 
-# np.random.seed(0)
-const = None
-eps = 1e-12
+class MCTS_Node:
+    def __init__(self, visits, value):
+        self.visits = visits
+        self.value = value
+        self.children = []
+        self.parent = None
+        self.state = None
+        self.action = None
+        self.player = None
+        self.possible_actions = []
 
-class Node:
-    def __init__(self,state,p_num,movs,move,par=None):
-        self.state=state
-        self.visits=0
-        self.wins=0
-        self.par=None
-        self.child=[]
-        self.player_num=p_num
-        self.moves=movs
-        self.par=par
-        self.last_move = move
-        self.is_expanded=False
-        self.is_terminal=False
-        self.val=0
-        if move:
-            self.check()
-        
-    def check(self):
-        ch=check_win(self.state,self.last_move,3-self.player_num)
-        if ch[0]:
-            self.is_terminal=True
-            self.val=-1
-        if len(self.moves)==0:
-            self.val=0
-            self.is_terminal=True
-    
-    def ucb(self):
-        if self.visits==0:
-            return 1e9
-        return (self.wins/self.visits)+const*np.sqrt(np.log(self.par.visits)/(self.visits))
-    
-    def best_move(self):
-        return self.child[np.argmax(self.ucbs)]
-        
-    def expand(self):
-        self.is_expanded=True
-        for move in self.moves:
-            new_state=self.state.copy()
-            new_state[move]=self.player_num
-            new_moves=self.moves.copy()
-            new_moves.remove(move)
-            self.child.append(Node(new_state,3-self.player_num,new_moves,move,self))   
-        self.ucbs=[1e9 for _ in range(len(self.moves))]
-    
-    def get_win_ratio(self):
-        return self.visits
-    
-    def best_child(self):
-        ws=[ch.get_win_ratio() for ch in self.child]
-        return self.child[np.argmax(ws)]
-    
-    def upd(self):
-        self.ucbs=[ch.ucb() for ch in self.child]
-        
-    def print(self):
-        print(f"Player to move : {self.player_num}")
-        print(self.state)
-        print(f"wins: {self.wins}")
-        print(f"visits: {self.visits}")
-        print()
-    
 class AIPlayer:
 
     def __init__(self, player_number: int, timer):
@@ -87,69 +32,10 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
-        self.move=0
-        self.prev_move=None
+        self.max_time = 12 # seconds
+        self.c = 2
+        self.total_time = 0
 
-    def select(self,node:Node):
-        while node.is_expanded and not node.is_terminal:
-            node=node.best_move()
-        return node
-    
-    def rollout(self,node:Node,p_type):
-        state=node.state.copy()
-        last_move=node.last_move
-        p_num=node.player_num
-        moves=node.moves.copy()
-        while(1):    
-            check=check_win(state,last_move,3-p_num)
-            if check[0]:
-                if p_num==p_type:
-                    return -1
-                else :
-                    return 1
-            if len(moves)==0:
-                return 0
-            num=np.random.choice(range(len(moves)))
-            last_move=moves[num]
-            moves.pop(num)
-            state[last_move]=p_num
-            p_num=3-p_num
-            
-        return 0
-        
-    def back_prop(self,node:Node,p_num,reward):
-        while node:
-            if node.player_num==p_num:
-                node.wins += -1*reward
-            else:
-                node.wins += 1*reward
-            node.visits+=1
-            if node.is_expanded:
-                node.upd()
-            node = node.par
-            
-    def mcts(self,state):
-        start=time.time()
-        moves=get_valid_actions(state)
-        root=Node(state,self.player_number,moves,None)
-        p_type = root.player_num
-        it=0
-        while time.time()-start<self.max_t:
-            it+=1
-            node=self.select(root)
-            if node.is_terminal:
-                if node.player_num==self.player_number:
-                    self.back_prop(node,self.player_number,node.val)
-                else:
-                    self.back_prop(node,self.player_number,-1*node.val)
-            else:
-                node.expand()
-                child:Node=random.choice(node.child)
-                reward=self.rollout(child,p_type)
-                self.back_prop(child,p_type,reward)
-        print(it)
-        return root.best_child().last_move
-                
     def get_move(self, state: np.array) -> Tuple[int, int]:
         """
         Given the current state of the board, return the next move
@@ -166,50 +52,218 @@ class AIPlayer:
         # Returns
         Tuple[int, int]: action (coordinates of a board cell)
         """
-        moved=self.move
-        print(moved)
-        global const
-        const=np.sqrt(3.2/(1+np.sqrt(moved)/4.0))
-        self.max_t=16
-        if moved>2:
-            self.max_t=21
-            if moved>6:
-                self.max_t=19
-                if moved>11:
-                    self.max_t=10
-                    if moved>14:
-                        self.max_t=3
-        best_move=None
-        start_move=(0,0)
-        if self.move==0:
-            if state[start_move]==0:
-                best_move=start_move
-            else:
-                best_move=(2,1) 
-        else:
-            found = 0
-            if self.move>2:
-                next_moves = get_valid_actions(state,3-self.player_number)
-                for i in next_moves:
-                    state[i] = self.player_number
-                    check=check_win(state,i,self.player_number)
-                    if check[0]:
-                        best_move = i
-                        found  = 1
-                        break
-                    state[i] = 0
-                if not found:
-                    for i in next_moves:
-                        state[i] = 3 - self.player_number
-                        check=check_win(state,i,3-self.player_number)
-                        if check[0]:
-                            best_move = i
-                            found  = 1
-                            break
-                        state[i] = 0
-            if not found:
-                best_move=self.mcts(state)
+
+        # Do the rest of your implementation here
+        if len(np.argwhere(state == 1)) == 0 and len(np.argwhere(state == 2)) == 0:
+            # set the total time
+            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            # play on a corner
+            return (0,0)
         
-        self.move+=1
-        self.prev_move=best_move
-        return best_move
+        # trying to block bridge of the opponent
+        if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shape[0] == 7:
+            # set the total time
+            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            # if the opponent played on a corner
+            x, y = np.argwhere(state == 3 - self.player_number)[0]
+            is_corner = get_corner((x, y), state.shape[0])
+            if is_corner != -1: # i.e. opponent played on a corner
+                # play on one of the neighbours
+                neighbours = get_neighbours(state.shape[0], (x, y))
+                return neighbours[2]
+
+        # get dimensions of the board
+        if state.shape[0] == 7:
+            # playing with random player
+            if self.total_time <= 240:
+                self.max_time = 10
+            else:
+                moves_played = len(np.argwhere(state == self.player_number))
+                if moves_played < 5:
+                    self.max_time = 21
+                elif moves_played < 12:
+                    self.max_time = 23
+                else:
+                    self.max_time = 15
+        else:
+            moves_played = len(np.argwhere(state == self.player_number))
+            if moves_played < 5:
+                self.max_time = 22
+            elif moves_played < 12:
+                self.max_time = 18
+            elif moves_played < 20:
+                self.max_time = 15
+            else:   
+                self.max_time = 10
+        return self.mcts(state)
+    
+    def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
+        if node.visits == 0:
+            return float('inf')
+        exploitation = node.value / node.visits
+        exploration = math.sqrt(math.log(parent_visits) / node.visits)
+        return exploitation + self.c * exploration
+    
+    def get_next_state(self, state: np.array, action: Tuple[int, int], player_number: int) -> np.array:
+        new_state = np.copy(state)
+        new_state[action[0], action[1]] = player_number
+        return new_state
+    
+    def kite_heuristic(self, board, action, player):
+        x, y = action[0], action[1]
+        dims = board.shape[0]
+        count = 0
+        dirs = [[(-2,-1), (-1,-1), (-1,0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)], [(1,1), (0,1), (1, 0)], [(1,-1), (0,-1), (1, 0)], [(-1,-2), (-1,-1), (0,-1)]]
+        for dir in dirs:
+            all_valid = True
+            for d in dir:
+                if not is_valid(x + d[0], y + d[1], dims):
+                    all_valid = False
+                    break
+            if not all_valid:
+                continue
+
+            if board[x + dir[0][0], y + dir[0][1]] == player:
+                a , b = 0, 0
+                if board[x + dir[1][0], y + dir[1][1]] == player:
+                    a += 1
+                elif board[x + dir[1][0], y + dir[1][1]] == 3 - player:
+                    b += 1
+                if board[x + dir[2][0], y + dir[2][1]] == player:
+                    a += 1
+                elif board[x + dir[2][0], y + dir[2][1]] == 3 - player:
+                    b += 1
+                if (a >= b):
+                    count += 1
+        if count == 0:
+            return 0
+        else:
+            return 10
+
+    def ignore_kite_heuristic(self, board, action, player):
+        x, y = action[0], action[1]
+        c1, c2 = 0, 0
+        dirs1 = [(-1,0), (0,-1), (0,1)]
+        dirs2 = [(-1,-1), (-1,1), (1,0)]
+        dims = board.shape[0]
+        for dir in dirs1:
+            if is_valid(x + dir[0], y + dir[1], dims):
+                if board[x + dir[0], y + dir[1]] == 3 - player:
+                    c1 += 1
+        for dir in dirs2:
+            if is_valid(x + dir[0], y + dir[1], dims):
+                if board[x + dir[0], y + dir[1]] == 3 - player:
+                    c2 += 1
+        if c1 > 1 or c2 > 1:
+            return -10
+        else:
+            return 0
+            
+    def mcts(self, state: np.array) -> Tuple[int, int]:
+        start_time = time.time()
+        possible_actions = get_valid_actions(state)
+        
+        root = MCTS_Node(0, 0)
+        root.state = np.copy(state)
+        root.player = self.player_number
+        root.possible_actions = possible_actions
+        for action in possible_actions:
+            child = MCTS_Node(0, 0)
+            child.state = self.get_next_state(state, action, self.player_number)
+            hasWon, _ = check_win(child.state, action, self.player_number)
+            if hasWon:
+                print("flag 1")
+                return action
+            opponent_state = self.get_next_state(state, action, 3 - self.player_number)
+            has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
+            if has_opponent_won:
+                print("flag 2")
+                return action
+            # heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+            # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
+            # child.value = heuristic1
+            # child.value += heuristic2
+            child.player = 3 - self.player_number
+            child.parent = root
+            child.action = action
+            child.possible_actions = child.parent.possible_actions.copy()
+            child.possible_actions.remove(child.action)
+            root.children.append(child)
+
+        # time limit for MCTS in seconds
+        iterations = 0
+        while time.time() - start_time < self.max_time:
+            iterations += 1
+            # print('time:', time.time() - start_time)
+            node = self.traverse(root)
+            if node.visits == 0:
+                value = self.rollout(node)
+            else:
+                # expand
+                possible_actions = node.possible_actions.copy()
+                if not possible_actions:
+                    value = fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
+                else:
+                    for action in possible_actions:
+                        child = MCTS_Node(0, 0)
+                        child.state = self.get_next_state(node.state, action, self.player_number)
+                        child.player = 3 - node.player
+                        # heuristic1 = self.kite_heuristic(child.state, action, node.player)
+                        # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
+                        # if child.player == self.player_number:
+                        #     child.value -= heuristic1
+                            # child.value -= heuristic2
+                        # else:
+                        #     child.value += heuristic1
+                            # child.value += heuristic2
+                        child.parent = node
+                        child.action = action
+                        child.possible_actions = child.parent.possible_actions.copy()
+                        child.possible_actions.remove(child.action)
+                        node.children.append(child)
+                    value = self.rollout(random.choice(node.children))
+
+            self.backpropagate(node, value)
+
+        best_node = max(root.children, key=lambda x: x.visits)
+        print("flag 3")
+        print('Iterations:', iterations)
+        return best_node.action
+
+    def traverse(self, node: MCTS_Node) -> MCTS_Node:
+        while node.children:
+            node = max(node.children, key=lambda x: self.ucb1(x, node.visits))
+        return node
+    
+    def rollout(self, node: MCTS_Node) -> float:
+        current_state = np.copy(node.state)
+        current_player = node.player
+        current_node = node
+
+        while True:
+            hasWon, _ = check_win(current_state, current_node.action, 3-current_player)
+            if hasWon:
+                return -1 if current_player == self.player_number else 1
+            # possible_actions = get_valid_actions(current_state)
+            possible_actions = current_node.possible_actions.copy()
+            if not possible_actions:
+                return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
+            action = random.choice(possible_actions)
+            current_state = self.get_next_state(current_state, action, current_player)
+            # create a new node
+            new_node = MCTS_Node(0, 0)
+            new_node.state = np.copy(current_state)
+            new_node.action = action
+            new_node.possible_actions = node.possible_actions.copy()
+            new_node.possible_actions.remove(new_node.action)
+            current_node = new_node
+            current_player = 3 - current_player
+
+    def backpropagate(self, node: MCTS_Node, value: float):
+        while node:
+            node.visits += 1
+            if node.player == self.player_number:
+                node.value -= value
+            else:
+                node.value += value
+            node = node.parent
