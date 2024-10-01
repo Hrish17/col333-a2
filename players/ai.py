@@ -69,7 +69,7 @@ class AIPlayer:
             is_corner = get_corner((x, y), state.shape[0])
             if is_corner != -1: # i.e. opponent played on a corner
                 # play on one of the neighbours
-                neighbours = get_neighbours(state.shape[0], x, y)
+                neighbours = get_neighbours(state.shape[0], (x, y))
                 return neighbours[0]
 
         # get dimensions of the board
