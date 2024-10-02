@@ -265,6 +265,16 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
+                        if (state.shape[0] == 11):
+                            if (self.moves_played <= 5):
+                                if (not self.to_be_moved_in_6(state, action, 1)):
+                                    continue
+                            elif (self.moves_played <= 10):
+                                if (not self.to_be_moved_in_6(state, action, 2)):
+                                    continue
+                            elif (self.moves_played <= 15):
+                                if (not self.to_be_moved_in_6(state, action, 3)):
+                                    continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
                             node.state, action, self.player_number)
