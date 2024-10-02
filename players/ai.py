@@ -66,23 +66,24 @@ class AIPlayer:
         # trying to block bridge of the opponent
         if len(np.argwhere(state == self.player_number)) == 0 and len(np.argwhere(state == 3 - self.player_number)) == 1 and state.shape[0] == 7:
             # set the total time
-            self.total_time = fetch_remaining_time(self.timer, self.player_number)
+            self.total_time = fetch_remaining_time(
+                self.timer, self.player_number)
             # if the opponent played on a corner
             x, y = np.argwhere(state == 3 - self.player_number)[0]
-            is_corner = get_corner((x,y), state.shape[0])
+            is_corner = get_corner((x, y), state.shape[0])
             if is_corner != 0:
-                if (x,y) == (0,0):
-                    return (0,3)
-                elif (x,y) == (0,3):
-                    return (0,0)
-                elif (x,y) == (0,6):
-                    return (3,6)
-                elif (x,y) == (3,6):
-                    return  (0,6)
-                elif (x,y) == (3,0):
-                    return (6,3)
-                elif (x,y) == (6,3):
-                    return (3,0)
+                if (x, y) == (0, 0):
+                    return (0, 3)
+                elif (x, y) == (0, 3):
+                    return (0, 0)
+                elif (x, y) == (0, 6):
+                    return (3, 6)
+                elif (x, y) == (3, 6):
+                    return (0, 6)
+                elif (x, y) == (3, 0):
+                    return (6, 3)
+                elif (x, y) == (6, 3):
+                    return (3, 0)
 
         # get dimensions of the board
         if state.shape[0] == 7:
@@ -194,11 +195,13 @@ class AIPlayer:
         root.state = np.copy(state)
         root.player = self.player_number
         root.possible_actions = possible_actions
+        moves_played = len(np.argwhere(state == self.player_number))
         for action in possible_actions:
-            if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
+            if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action) and moves_played <= 6):
                 continue
             child = MCTS_Node(0, 0)
-            child.state = self.get_next_state(state, action, self.player_number)
+            child.state = self.get_next_state(
+                state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
                 print("flag 1")
@@ -213,12 +216,12 @@ class AIPlayer:
             child.possible_actions = child.parent.possible_actions.copy()
             child.possible_actions.remove(child.action)
             root.children.append(child)
-        
+
         for action in possible_actions:
-            if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
-                continue
-            opponent_state = self.get_next_state(state, action, 3 - self.player_number)
-            has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
+            opponent_state = self.get_next_state(
+                state, action, 3 - self.player_number)
+            has_opponent_won, _ = check_win(
+                opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
                 print("flag 2")
                 return action
@@ -234,23 +237,25 @@ class AIPlayer:
             else:
                 # expand
                 possible_actions = node.possible_actions.copy()
+                moves_played = len(np.argwhere(state == self.player_number))
                 if not possible_actions:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action)):
+                        if (state.shape[0] == 13 and not self.to_be_moved_in_6(state, action) and moves_played <= 6):
                             continue
                         child = MCTS_Node(0, 0)
-                        child.state = self.get_next_state(node.state, action, self.player_number)
+                        child.state = self.get_next_state(
+                            node.state, action, self.player_number)
                         child.player = 3 - node.player
                         # heuristic1 = self.kite_heuristic(child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                         # if child.player == self.player_number:
                         #     child.value -= heuristic1
-                            # child.value -= heuristic2
+                        # child.value -= heuristic2
                         # else:
                         #     child.value += heuristic1
-                            # child.value += heuristic2
+                        # child.value += heuristic2
                         child.parent = node
                         child.action = action
                         child.possible_actions = child.parent.possible_actions.copy()
