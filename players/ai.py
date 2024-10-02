@@ -94,10 +94,9 @@ class AIPlayer:
             if self.total_time <= 240:
                 self.max_time = 10
             else:
-                moves_played = len(np.argwhere(state == self.player_number))
-                if moves_played < 5:
+                if self.moves_played < 5:
                     self.max_time = 21
-                elif moves_played < 12:
+                elif self.moves_played < 12:
                     self.max_time = 23
                 else:
                     self.max_time = 15
@@ -219,7 +218,7 @@ class AIPlayer:
             if hasWon:
                 print("flag 1")
                 return action
-            if (moves_played <= 15):
+            if (self.moves_played <= 15):
                 heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
                 # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
                 child.value = heuristic1
@@ -249,24 +248,23 @@ class AIPlayer:
             else:
                 # expand
                 possible_actions = node.possible_actions.copy()
-                moves_played = len(np.argwhere(state == self.player_number))
                 if not possible_actions:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        # if (moves_played <= 6):
+                        # if (self.moves_played <= 6):
                         #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
                         #         continue
-                        # elif (moves_played <= 12):
+                        # elif (self.moves_played <= 12):
                         #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
                         #         continue
-                        # elif (moves_played <= 20):
+                        # elif (self.moves_played <= 20):
                         #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
                         #         continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(node.state, action, self.player_number)
                         child.player = 3 - node.player
-                        if (moves_played <= 15):
+                        if (self.moves_played <= 15):
                             heuristic1 = self.kite_heuristic(child.state, action, node.player)
                             # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                             if child.player == self.player_number:
