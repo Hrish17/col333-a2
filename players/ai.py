@@ -332,33 +332,38 @@ class AIPlayer:
 
     def rollout(self, node: MCTS_Node) -> float:
         current_state = np.copy(node.state)
-        current_player = node.player
-        current_node = node
+        current_node = MCTS_Node(0,0)
+        current_node.state = current_state
+        current_node.player = node.player
+        current_node.action = node.action
+        current_node.possible_actions = node.possible_actions.copy()
 
         while True:
-            hasWon, _ = check_win(
-                current_state, current_node.action, 3-current_player)
+            hasWon, _ = check_win(current_state, current_node.action, 3-current_node.player)
             if hasWon:
-                return -1 if current_player == self.player_number else 1
+                return -1 if current_node.player == self.player_number else 1
                 # if (self.moves_played <= 15):
                 #     return -50 if current_player == self.player_number else 10
                 # else:
                 #     return -200 if current_player == self.player_number else 200
             # possible_actions = get_valid_actions(current_state)
-            possible_actions = current_node.possible_actions.copy()
-            if not possible_actions:
+            # possible_actions = current_node.possible_actions.copy()
+            if not current_node.possible_actions:
                 return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
-            action = random.choice(possible_actions)
-            current_state = self.get_next_state(
-                current_state, action, current_player)
+            action = random.choice(current_node.possible_actions)
+            current_state = self.get_next_state(current_state, action, current_node.player)
             # create a new node
-            new_node = MCTS_Node(0, 0)
-            new_node.state = np.copy(current_state)
-            new_node.action = action
-            new_node.possible_actions = node.possible_actions.copy()
-            new_node.possible_actions.remove(new_node.action)
-            current_node = new_node
-            current_player = 3 - current_player
+            # new_node = MCTS_Node(0, 0)
+            # new_node.state = np.copy(current_state)
+            # new_node.action = action
+            # new_node.possible_actions = node.possible_actions.copy()
+            # new_node.possible_actions.remove(new_node.action)
+            # current_node = new_node
+            current_node.state = current_state
+            current_node.action = action
+            current_node.possible_actions.remove(action)
+            current_node.player = 3 - current_node.player
+            # current_player = 3 - current_player
 
     def backpropagate(self, node: MCTS_Node, value: float):
         while node:
