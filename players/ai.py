@@ -245,7 +245,6 @@ class AIPlayer:
                 else:
                     for action in possible_actions:
                         if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action) and moves_played <= 6):
-                            print("skipped in " + action)
                             continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
