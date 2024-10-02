@@ -184,7 +184,7 @@ class AIPlayer:
                     (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
         dirs = dirs_closest + dirs_kite + dirs_next_to_kite + dirs_far
         for dir in dirs:
-            if (is_valid(x+dir[0], y+dir[1], dims) and board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2):
+            if (is_valid(x+dir[0], y+dir[1], dims) and (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2)):
                 return True
         return False
 
