@@ -160,7 +160,7 @@ class AIPlayer:
                 #     count += 1
         if (count == 0):
             return 0
-        return 5
+        return 2
 
     def ignore_kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
@@ -177,15 +177,20 @@ class AIPlayer:
                 if board[x + dir[0], y + dir[1]] == 3 - player:
                     c2 += 1
         if c1 > 1 or c2 > 1:
-            return -10
+            return -2
         else:
             return 0
 
     def confirm_flag_heuristic(self, board, action, player):
         x, y = action[0], action[1]
         dims = board.shape[0]
-        dirs = [[(-1, 0), (0, 1), (-1, 1)], [(0, 1), (0, -1),
-                                             (1, 0)], [(-1, 0), (0, -1), (-1, -1)]]
+        dirs = []
+        if(y == (dims-1)/2):
+            dirs = [[(-1, 0), (0, 1), (-1, 1)], [(0, 1), (0, -1),(1, 0)], [(-1, 0), (0, -1), (-1, -1)]]
+        elif(y < (dims-1)/2):
+            dirs = [[(-1, 0), (1, 1), (0, 1)], [(1, 1), (0, -1), (1, 0)], [(-1, 0), (0, -1), (-1, -1)]]
+        else:
+            dirs = [[(-1, 0), (0, 1), (-1, 1)], [(0, 1), (1, -1), (1, 0)], [(-1, 0), (1, -1), (0, -1)]]
         for dir in dirs:
             all_valid = True
             for d in dir:
@@ -195,7 +200,7 @@ class AIPlayer:
             if not all_valid:
                 continue
             if board[x + dir[0][0], y + dir[0][1]] == player and board[x + dir[1][0], y + dir[1][1]] == player and board[x + dir[2][0], y + dir[2][1]] == 3 - player:
-                return 5
+                return 10
         return 0
 
     def to_be_moved_in_6(self, board, action):
@@ -253,10 +258,10 @@ class AIPlayer:
             # if (self.moves_played <= 15):
             flag_heuristic = self.kite_heuristic(child.state, action, self.player_number)
             # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
-            # confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, self.player_number)
+            confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, self.player_number)
             child.value = flag_heuristic
             # child.value += heuristic2
-            # child.value += confirm_flag_heuristic
+            child.value += confirm_flag_heuristic
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -297,16 +302,15 @@ class AIPlayer:
                         # if (self.moves_played <= 15):
                         flag_heuristic = self.kite_heuristic(child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
-                        # confirm_flag_heuristic = self.confirm_flag_heuristic(
-                        # child.state, action, node.player)
+                        confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, node.player)
                         if child.player == self.player_number:
                             child.value -= flag_heuristic
                             # child.value -= heuristic2
-                            # child.value -= confirm_flag_heuristic
+                            child.value -= confirm_flag_heuristic
                         else:
                             child.value += flag_heuristic
                             # child.value += heuristic2
-                            # child.value += confirm_flag_heuristic
+                            child.value += confirm_flag_heuristic
                         child.parent = node
                         child.action = action
                         child.possible_actions = child.parent.possible_actions.copy()
