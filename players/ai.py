@@ -101,14 +101,15 @@ class AIPlayer:
                 else:
                     self.max_time = 15
         else:
+            rem_time = fetch_remaining_time(self.timer, self.player_number)
+            rem_moves = 45 - self.moves_played
+            avg = rem_time/rem_moves
             if self.moves_played < 5:
-                self.max_time = 22
-            elif self.moves_played < 12:
-                self.max_time = 19
+                self.max_time = avg * 1.4
             elif self.moves_played < 20:
-                self.max_time = 16
+                self.max_time = avg * 1.7
             else:
-                self.max_time = 19
+                self.max_time = avg
         return self.mcts(state)
 
     def ucb1(self, node: MCTS_Node, parent_visits: int) -> float:
@@ -253,15 +254,16 @@ class AIPlayer:
                 state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
-                print("flag 1")
+                # print("flag 1")
                 return action
             # if (self.moves_played <= 15):
-            flag_heuristic = self.kite_heuristic(child.state, action, self.player_number)
-            # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
-            confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, self.player_number)
-            child.value = flag_heuristic
-            # child.value += heuristic2
-            child.value += confirm_flag_heuristic
+            if (state.shape[0] == 11):
+                flag_heuristic = self.kite_heuristic(child.state, action, self.player_number)
+                # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
+                confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, self.player_number)
+                child.value = flag_heuristic
+                # child.value += heuristic2
+                child.value += confirm_flag_heuristic
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -275,7 +277,7 @@ class AIPlayer:
             has_opponent_won, _ = check_win(
                 opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
-                print("flag 2")
+                # print("flag 2")
                 return action
 
         # time limit for MCTS in seconds
@@ -300,17 +302,18 @@ class AIPlayer:
                             node.state, action, node.player)
                         child.player = 3 - node.player
                         # if (self.moves_played <= 15):
-                        flag_heuristic = self.kite_heuristic(child.state, action, node.player)
-                        # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
-                        confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, node.player)
-                        if child.player == self.player_number:
-                            child.value -= flag_heuristic
-                            # child.value -= heuristic2
-                            child.value -= confirm_flag_heuristic
-                        else:
-                            child.value += flag_heuristic
-                            # child.value += heuristic2
-                            child.value += confirm_flag_heuristic
+                        if state.shape[0] == 11:
+                            flag_heuristic = self.kite_heuristic(child.state, action, node.player)
+                            # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
+                            confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, node.player)
+                            if child.player == self.player_number:
+                                child.value -= flag_heuristic
+                                # child.value -= heuristic2
+                                child.value -= confirm_flag_heuristic
+                            else:
+                                child.value += flag_heuristic
+                                # child.value += heuristic2
+                                child.value += confirm_flag_heuristic
                         child.parent = node
                         child.action = action
                         child.possible_actions = child.parent.possible_actions.copy()
@@ -321,7 +324,7 @@ class AIPlayer:
             self.backpropagate(node, value)
 
         best_node = max(root.children, key=lambda x: x.visits)
-        print("flag 3")
+        # print("flag 3")
         print('Iterations:', iterations)
         return best_node.action
 
