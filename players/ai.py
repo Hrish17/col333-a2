@@ -138,22 +138,12 @@ class AIPlayer:
             if not all_valid:
                 continue
 
-            if board[x + dir[0][0], y + dir[0][1]] == player:
-                a, b = 0, 0
-                if board[x + dir[1][0], y + dir[1][1]] == player:
-                    a += 1
-                elif board[x + dir[1][0], y + dir[1][1]] == 3 - player:
-                    b += 1
-                if board[x + dir[2][0], y + dir[2][1]] == player:
-                    a += 1
-                elif board[x + dir[2][0], y + dir[2][1]] == 3 - player:
-                    b += 1
-                if (a >= b):
+            if board[x + dir[1][0], y + dir[1][1]] == 0 and board[x + dir[2][0], y + dir[2][1]] == 0:
+                if board[x + dir[0][0], y + dir[0][1]] == player:
+                    count += 2
+                elif board[x + dir[0][0], y + dir[0][1]] == 3 - player:
                     count += 1
-        if count == 0:
-            return 0
-        else:
-            return 100
+        return 50*count
 
     def ignore_kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
@@ -184,10 +174,10 @@ class AIPlayer:
         dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),
                     (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
         dirs = dirs_closest + dirs_kite
-        if (choice == 2):
+        if (choice >= 2):
             dirs += dirs_next_to_kite
-        elif (choice == 3):
-            dirs += dirs_next_to_kite + dirs_far
+        if (choice >= 3):
+            dirs += dirs_far
         for dir in dirs:
             if (is_valid(x+dir[0], y+dir[1], dims) and (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2)):
                 return True
@@ -203,15 +193,16 @@ class AIPlayer:
         root.possible_actions = possible_actions
 
         for action in possible_actions:
-            if (self.moves_played <= 5):
-                if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
-                    continue
-            elif (self.moves_played <= 10):
-                if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
-                    continue
-            elif (self.moves_played <= 15):
-                if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
-                    continue
+            if (state.shape[0] == 11):
+                if (self.moves_played <= 5):
+                    if (not self.to_be_moved_in_6(state, action, 1)):
+                        continue
+                elif (self.moves_played <= 10):
+                    if (not self.to_be_moved_in_6(state, action, 2)):
+                        continue
+                elif (self.moves_played <= 15):
+                    if (not self.to_be_moved_in_6(state, action, 3)):
+                        continue
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(
                 state, action, self.player_number)
@@ -256,15 +247,6 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        # if (self.moves_played <= 6):
-                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
-                        #         continue
-                        # elif (self.moves_played <= 12):
-                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
-                        #         continue
-                        # elif (self.moves_played <= 20):
-                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
-                        #         continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
                             node.state, action, self.player_number)
