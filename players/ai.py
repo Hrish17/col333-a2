@@ -140,10 +140,12 @@ class AIPlayer:
 
             if board[x + dir[1][0], y + dir[1][1]] == 0 and board[x + dir[2][0], y + dir[2][1]] == 0:
                 if board[x + dir[0][0], y + dir[0][1]] == player:
-                    count += 2
-                elif board[x + dir[0][0], y + dir[0][1]] == 3 - player:
                     count += 1
-        return 50*count
+                # elif board[x + dir[0][0], y + dir[0][1]] == 3 - player:
+                #     count += 1
+        if(count == 0):
+            return 0
+        return 5
 
     def ignore_kite_heuristic(self, board, action, player):
         x, y = action[0], action[1]
@@ -210,12 +212,12 @@ class AIPlayer:
             if hasWon:
                 print("flag 1")
                 return action
-            if (self.moves_played <= 15):
-                heuristic1 = self.kite_heuristic(
-                    child.state, action, self.player_number)
-                # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
-                child.value = heuristic1
-                # child.value += heuristic2
+            # if (self.moves_played <= 15):
+            heuristic1 = self.kite_heuristic(
+                child.state, action, self.player_number)
+            # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
+            child.value = heuristic1
+            # child.value += heuristic2
             child.player = 3 - self.player_number
             child.parent = root
             child.action = action
@@ -251,16 +253,16 @@ class AIPlayer:
                         child.state = self.get_next_state(
                             node.state, action, self.player_number)
                         child.player = 3 - node.player
-                        if (self.moves_played <= 15):
-                            heuristic1 = self.kite_heuristic(
-                                child.state, action, node.player)
-                            # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
-                            if child.player == self.player_number:
-                                child.value -= heuristic1
-                                # child.value -= heuristic2
-                            else:
-                                child.value += heuristic1
-                                # child.value += heuristic2
+                        # if (self.moves_played <= 15):
+                        heuristic1 = self.kite_heuristic(
+                            child.state, action, node.player)
+                        # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
+                        if child.player == self.player_number:
+                            child.value -= heuristic1
+                            # child.value -= heuristic2
+                        else:
+                            child.value += heuristic1
+                            # child.value += heuristic2
                         child.parent = node
                         child.action = action
                         child.possible_actions = child.parent.possible_actions.copy()
@@ -289,10 +291,11 @@ class AIPlayer:
             hasWon, _ = check_win(
                 current_state, current_node.action, 3-current_player)
             if hasWon:
-                if (self.moves_played <= 15):
-                    return -50 if current_player == self.player_number else 10
-                else:
-                    return -200 if current_player == self.player_number else 200
+                return -1 if current_player == self.player_number else 1
+                # if (self.moves_played <= 15):
+                #     return -50 if current_player == self.player_number else 10
+                # else:
+                #     return -200 if current_player == self.player_number else 200
             # possible_actions = get_valid_actions(current_state)
             possible_actions = current_node.possible_actions.copy()
             if not possible_actions:
