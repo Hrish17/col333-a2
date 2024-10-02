@@ -129,6 +129,21 @@ class AIPlayer:
         count = 0
         dirs = [[(-2, -1), (-1, -1), (-1, 0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)],
                 [(1, 1), (0, 1), (1, 0)], [(1, -1), (0, -1), (1, 0)], [(-1, -2), (-1, -1), (0, -1)]]
+        if (y == (dims-1)/2):
+            dirs = [[(-2, -1), (-1, -1), (-1, 0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)],
+                    [(1, 1), (0, 1), (1, 0)], [(1, -1), (0, -1), (1, 0)], [(-1, -2), (-1, -1), (0, -1)]]
+        elif (y < (dims-1)/2):
+            dirs = [[(-2, -1), (-1, -1), (-1, 0)], [(-1, 1), (-1, 0), (0, 1)], [(1, 2), (0, 1), (1, 1)],
+                    [(2, 1), (1, 1), (1, 0)], [(1, -1), (0, -1), (1, 0)], [(-1, -2), (-1, -1), (0, -1)]]
+            if (y == (dims-1)/2 - 1):
+                dirs = [[(-2, -1), (-1, -1), (-1, 0)], [(-1, 1), (0, 1), (1, 1)], [(0, 2), (0, 1), (1, 1)],
+                        [(2, 1), (1, 1), (1, 0)], [(1, -1), (0, -1), (1, 0)], [(-1, -2), (-1, -1), (0, -1)]]
+        else:
+            dirs = [[(-1, -1), (1, -1), (-1, 0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)],
+             [(1, 1), (0, 1), (1, 0)], [(2, -1), (1, -1), (1, 0)], [(-1, -2), (1, -1), (0, -1)]]
+            if (y == (dims-1)/2 + 1):
+                dirs = [[(-1, -1), (0, -1), (-1, 0)], [(-2, 1), (-1, 0), (-1, 1)], [(-1, 2), (-1, 1), (0, 1)],
+                    [(1, 1), (0, 1), (1, 0)], [(2, -1), (1, -1), (1, 0)], [(0, -2), (1, -1), (0, -1)]]
         for dir in dirs:
             all_valid = True
             for d in dir:
@@ -169,7 +184,8 @@ class AIPlayer:
     def confirm_flag_heuristic(self, board, action, player):
         x, y = action[0], action[1]
         dims = board.shape[0]
-        dirs = [[(-1, 0), (0, 1), (-1, 1)], [(0, 1), (0, -1), (1, 0)], [(-1, 0), (0, -1), (-1, -1)]]
+        dirs = [[(-1, 0), (0, 1), (-1, 1)], [(0, 1), (0, -1),
+                                             (1, 0)], [(-1, 0), (0, -1), (-1, -1)]]
         for dir in dirs:
             all_valid = True
             for d in dir:
@@ -190,18 +206,21 @@ class AIPlayer:
         # dirs_next_to_kite = [(-2, 0), (-2, 2), (0, 2),(2, 0), (0, -2), (-2, -2)]
         # dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),(-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
         if (y == (dims-1)/2):
-            dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
+            dirs_closest = [(-1, 0), (-1, 1), (0, 1),
+                            (1, 0), (0, -1), (-1, -1)]
             dirs_kite = [(-2, -1), (-2, 1), (-1, 2), (1, 1), (1, -1), (-1, -2)]
         elif (y < (dims-1)/2):
             dirs_closest = [(-1, 0), (0, 1), (1, 1), (1, 0), (0, -1), (-1, -1)]
-            dirs_kite = [(-1,1),(1,2),(2,1),(1,-1),(-1,-2),(-2,-1)]
+            dirs_kite = [(-1, 1), (1, 2), (2, 1), (1, -1), (-1, -2), (-2, -1)]
             if (y == (dims - 1)/2 - 1):
-                dirs_kite = [(-1,1),(0,2),(2,1),(1,-1),(-1,-2),(-2,-1)]
+                dirs_kite = [(-1, 1), (0, 2), (2, 1),
+                             (1, -1), (-1, -2), (-2, -1)]
         elif (y > (dims-1)/2):
             dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (1, -1), (0, -1)]
-            dirs_kite = [(-2,1),(-1,2),(1,1),(2,-1),(1,-2),(-1,-1)]
+            dirs_kite = [(-2, 1), (-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1)]
             if (y == (dims - 1)/2 + 1):
-                dirs_kite = [(-2,1),(-1,2),(1,1),(2,-1),(0,-2),(-1,-1)]
+                dirs_kite = [(-2, 1), (-1, 2), (1, 1),
+                             (2, -1), (0, -2), (-1, -1)]
         dirs = dirs_closest + dirs_kite
         # if (choice >= 2):
         #     dirs += dirs_next_to_kite
@@ -225,16 +244,17 @@ class AIPlayer:
             if (state.shape[0] == 11 and self.moves_played <= 10 and not self.to_be_moved_in_6(state, action)):
                 continue
             child = MCTS_Node(0, 0)
-            child.state = self.get_next_state(state, action, self.player_number)
+            child.state = self.get_next_state(
+                state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
                 print("flag 1")
                 return action
             # if (self.moves_played <= 15):
-            # flag_heuristic = self.kite_heuristic(child.state, action, self.player_number)
+            flag_heuristic = self.kite_heuristic(child.state, action, self.player_number)
             # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
             # confirm_flag_heuristic = self.confirm_flag_heuristic(child.state, action, self.player_number)
-            # child.value = flag_heuristic
+            child.value = flag_heuristic
             # child.value += heuristic2
             # child.value += confirm_flag_heuristic
             child.player = 3 - self.player_number
@@ -268,23 +288,23 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        if (state.shape[0] == 11 and self.moves_played <= 10 and not self.to_be_moved_in_6(state, action)):
+                        if (state.shape[0] == 11 and self.moves_played <= 10 and not self.to_be_moved_in_6(node.state, action)):
                             continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
-                            node.state, action, self.player_number)
+                            node.state, action, node.player)
                         child.player = 3 - node.player
                         # if (self.moves_played <= 15):
-                        # flag_heuristic = self.kite_heuristic(child.state, action, node.player)
+                        flag_heuristic = self.kite_heuristic(child.state, action, node.player)
                         # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                         # confirm_flag_heuristic = self.confirm_flag_heuristic(
-                            # child.state, action, node.player)
-                        # if child.player == self.player_number:
-                            # child.value -= flag_heuristic
+                        # child.state, action, node.player)
+                        if child.player == self.player_number:
+                            child.value -= flag_heuristic
                             # child.value -= heuristic2
                             # child.value -= confirm_flag_heuristic
-                        # else:
-                            # child.value += flag_heuristic
+                        else:
+                            child.value += flag_heuristic
                             # child.value += heuristic2
                             # child.value += confirm_flag_heuristic
                         child.parent = node
