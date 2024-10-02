@@ -187,7 +187,7 @@ class AIPlayer:
         if (choice == 2):
             dirs += dirs_next_to_kite
         elif (choice == 3):
-            dirs += dirs_far
+            dirs += dirs_next_to_kite + dirs_far
         for dir in dirs:
             if (is_valid(x+dir[0], y+dir[1], dims) and (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2)):
                 return True
@@ -203,23 +203,25 @@ class AIPlayer:
         root.possible_actions = possible_actions
 
         for action in possible_actions:
-            if (self.moves_played <= 6):
+            if (self.moves_played <= 5):
                 if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
                     continue
-            elif (self.moves_played <= 12):
+            elif (self.moves_played <= 10):
                 if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
                     continue
-            elif (self.moves_played <= 20):
+            elif (self.moves_played <= 15):
                 if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
                     continue
             child = MCTS_Node(0, 0)
-            child.state = self.get_next_state(state, action, self.player_number)
+            child.state = self.get_next_state(
+                state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
             if hasWon:
                 print("flag 1")
                 return action
             if (self.moves_played <= 15):
-                heuristic1 = self.kite_heuristic(child.state, action, self.player_number)
+                heuristic1 = self.kite_heuristic(
+                    child.state, action, self.player_number)
                 # heuristic2 = self.ignore_kite_heuristic(child.state, action, self.player_number)
                 child.value = heuristic1
                 # child.value += heuristic2
@@ -231,8 +233,10 @@ class AIPlayer:
             root.children.append(child)
 
         for action in possible_actions:
-            opponent_state = self.get_next_state(state, action, 3 - self.player_number)
-            has_opponent_won, _ = check_win(opponent_state, action, 3 - self.player_number)
+            opponent_state = self.get_next_state(
+                state, action, 3 - self.player_number)
+            has_opponent_won, _ = check_win(
+                opponent_state, action, 3 - self.player_number)
             if has_opponent_won:
                 print("flag 2")
                 return action
@@ -262,10 +266,12 @@ class AIPlayer:
                         #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
                         #         continue
                         child = MCTS_Node(0, 0)
-                        child.state = self.get_next_state(node.state, action, self.player_number)
+                        child.state = self.get_next_state(
+                            node.state, action, self.player_number)
                         child.player = 3 - node.player
                         if (self.moves_played <= 15):
-                            heuristic1 = self.kite_heuristic(child.state, action, node.player)
+                            heuristic1 = self.kite_heuristic(
+                                child.state, action, node.player)
                             # heuristic2 = self.ignore_kite_heuristic(child.state, action, node.player)
                             if child.player == self.player_number:
                                 child.value -= heuristic1
