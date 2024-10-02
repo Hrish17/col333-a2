@@ -175,6 +175,7 @@ class AIPlayer:
 
     def to_be_moved_in_6(self, board, action):
         x, y = action[0], action[1]
+        dims = board.shape[0]
         dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
         dirs_kite = [(-2, -1), (-2, 1), (-1, 2), (1, 1), (1, -1), (-1, -2)]
         dirs_next_to_kite = [(-2, 0), (-2, 2), (0, 2),
@@ -183,7 +184,7 @@ class AIPlayer:
                     (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
         dirs = dirs_closest + dirs_kite + dirs_next_to_kite + dirs_far
         for dir in dirs:
-            if (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2):
+            if (is_valid(x+dir[0], y+dir[1], dims) and board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2):
                 return True
         return False
 
