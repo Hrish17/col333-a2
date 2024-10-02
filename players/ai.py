@@ -91,7 +91,7 @@ class AIPlayer:
         # get dimensions of the board
         if state.shape[0] == 7:
             # playing with random player
-            if self.total_time <= 240:
+            if self.total_time <= 180:
                 self.max_time = 10
             else:
                 if self.moves_played < 5:
