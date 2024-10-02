@@ -2,307 +2,177 @@ import time
 import math
 import random
 import numpy as np
-import copy
 from helper import *
+from typing import Tuple, List
 
-C = 1.4
+# np.random.seed(0)
+
+const = np.sqrt(1.5)
+eps = 1e-12
+moved=0
+dim=6
+maxx=2*dim-1
+factor_h=1/100.0
+dir1=[(-1,-1),(0,-1),(1,0),(1,1),(0,1),(-1,0)]
+dir2=[(0,-1),(1,-1),(1,0),(0,1),(-1,1),(-1,0)]
+dir3=[(-1,1),(0,1),(1,0),(0,-1),(-1,-1),(-1,0)]
+allr=[(1,-2),(2,-1),(1,1),(-1,2),(-2,1),(-1,-1)]
+alll=[(-1,-2),(1,-1),(2,1),(1,2),(-1,1),(-2,-1)]
+all_l=[(-1,-2),(1,-1),(2,1),(0,2),(-1,1),(-2,-1)]
+all_r=[(2,-1),(1,1),(-1,2),(-2,1),(-1,-1),(0,-2)]
+all_c=[(-2,-1),(-1,-2),(1,-1),(1,1),(-1,2),(-2,1)]
+rem_moves=None
+def get_my_neighbours(state, x, y):
+    neighs=[]
+    if y>dim-1:
+        for direction in dir2:
+            nx, ny = x + direction[0], y + direction[1]
+            if 0 <= nx < state.shape[0] and 0 <= ny < state.shape[1]:
+                neighs.append((nx,ny))
+    elif y<dim:
+        for direction in dir1:
+            nx, ny = x + direction[0], y + direction[1]
+            if 0 <= nx < state.shape[0] and 0 <= ny < state.shape[1]:
+                neighs.append((nx,ny))
+    else:
+        for direction in dir3:
+            nx, ny = x + direction[0], y + direction[1]
+            if 0 <= nx < state.shape[0] and 0 <= ny < state.shape[1]:
+                neighs.append((nx,ny))
+    
+    if moved>3:
+        if y>dim:
+            for dir in allr:
+                new_x=x+dir[0]
+                new_y=y+dir[1]
+                if new_x>=0 and new_y>=0 and new_x<maxx and new_y<maxx:
+                    neighs.append((new_x,new_y))
+        elif y<dim-2:
+            for dir in alll:
+                new_x=x+dir[0]
+                new_y=y+dir[1]
+                if new_x>=0 and new_y>=0 and new_x<maxx and new_y<maxx:
+                    neighs.append((new_x,new_y))
+                    
+        elif y==dim:
+            for dir in all_r:
+                new_x=x+dir[0]
+                new_y=y+dir[1]
+                if new_x>=0 and new_y>=0 and new_x<maxx and new_y<maxx:
+                    neighs.append((new_x,new_y))
+                    
+        elif y==dim-2:
+            for dir in all_l:
+                new_x=x+dir[0]
+                new_y=y+dir[1]
+                if new_x>=0 and new_y>=0 and new_x<maxx and new_y<maxx:
+                    neighs.append((new_x,new_y))
+        else:
+            for dir in all_c:
+                new_x=x+dir[0]
+                new_y=y+dir[1]
+                if new_x>=0 and new_y>=0 and new_x<maxx and new_y<maxx:
+                    neighs.append((new_x,new_y))
+                        
+    return neighs
+
+def add_moves_with_played_neighbors(valid_moves, state):
+    filtered_moves_with_neighbors=[]
+    for move in valid_moves:
+        x, y = move
+        all_neighs=get_my_neighbours(state, x, y)
+        for mov in all_neighs:
+            if state[mov]==1 or state[mov]==2:
+                filtered_moves_with_neighbors.append(move)
+                break
+    return filtered_moves_with_neighbors
+
+def modify(state,play_moves,move):
+    valid_m=set(play_moves)
+    neighs=get_my_neighbours(state,move[0],move[1])
+    for m in neighs:
+        if state[m]==0:
+            if m in rem_moves:
+                valid_m.add(m)
+    return list(valid_m)
+
+def get_valid_actions2(board: np.array):
+    valid_moves = np.argwhere(board == 0)
+    valid_moves = [tuple(move) for move in valid_moves]
+    return add_moves_with_played_neighbors(valid_moves,board)
+
+
+def hex_manhattan_distance(a,b):
+    return factor_h*(abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[0]+ a[1]- b[0]- b[1])/3.0)
 
 class Node:
-    def __init__(self, state, playerID, parent=None):
-        self.state = np.copy(state)
-        self.parent = parent
-        self.id = playerID
-        self.valid_actions = []
-        self.childrens = []
-        self.visits = 0
-        self.ucb = np.inf
-        self.value = 0
-        self.action = None
-        
-
-class MCTStree:
-    def __init__(self, state, playerID, timer):
-        self.root = Node(state, playerID)
-        self.root.parent = None
-        self.UCB=0
-        self.player_number=playerID
-        self.timer = timer
-
-    def UCB1(self, node):
-        if node.visits == 0:
-            return np.inf
-        else:
-            return (node.value/node.visits) + C * math.sqrt(math.log(node.parent.visits) / node.visits)
-        
-    def Rollout(self, node):
-        curr_node = Node(node.state, node.id)
-        curr_node.action = node.action
-        curr_node.valid_actions = list(get_valid_actions(curr_node.state))
-
-        while True:
-            res, type = check_win(curr_node.state, curr_node.action, 3 - curr_node.id, [])
-            if res:
-                if curr_node.id == self.player_number:
-                    return -1
-                else:
-                    return 1
-            if not curr_node.valid_actions:
-                return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
-            rand_action = random.choice(curr_node.valid_actions)
-            curr_node.state[rand_action] = curr_node.id
-            curr_node.valid_actions.remove(rand_action)
-            old_id = curr_node.id
-            curr_node.id = 3 - old_id
-            curr_node.action = rand_action
-
-
-    def BackPropagating(self, curr_node, v):
-        while curr_node is not None:
-            if curr_node.id == self.player_number:
-                curr_node.value -= v
-            else:
-                curr_node.value += v
-            curr_node.visits += 1
-            curr_node = curr_node.parent
-
-    def MCTS(self):
-        self.root.valid_actions = list(get_valid_actions(self.root.state))
-        for action in self.root.valid_actions:
-            new_node = Node(self.root.state, 3 - self.root.id, self.root)
-            new_node.state[action] = self.root.id
-            new_node.action = action
-            new_node.valid_actions = self.root.valid_actions.copy()
-            new_node.valid_actions.remove(action)
-            self.root.childrens.append(new_node)
-            res, type = check_win(new_node.state, action, self.root.id, [])
-            if res:
-                return action
-            
-        for action in self.root.valid_actions:
-            opp_state = np.copy(self.root.state)
-            opp_state[action] = 3 - self.root.id
-            res, type = check_win(opp_state, action, 3 - self.root.id, [])
-            if res:
-                return action
-            
-        start_time = time.time()
-        iterations = 0
-        while True:
-            if time.time() - start_time > 18:
-                break
-            iterations += 1
-            curr_node = self.root
-            while curr_node.childrens:
-                for child in curr_node.childrens:
-                    child.ucb = self.UCB1(child)
-                curr_node = max(curr_node.childrens, key=lambda x: x.ucb)
-            if curr_node.visits == 0:
-                v = self.Rollout(curr_node)
-            else:
-                if not curr_node.valid_actions:
-                    v = fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
-                else:
-                    for action in curr_node.valid_actions:
-                        new_node = Node(curr_node.state, 3 - curr_node.id, curr_node)
-                        new_node.state[action] = curr_node.id
-                        new_node.action = action
-                        new_node.valid_actions = curr_node.valid_actions.copy()
-                        new_node.valid_actions.remove(action)
-                        curr_node.childrens.append(new_node)
-                    rand_child = random.choice(curr_node.childrens)
-                    v = self.Rollout(rand_child)
-                    curr_node = rand_child
-                    
-            # print('yaha bhi')
-            self.BackPropagating(curr_node, v)
-        print(iterations)
-        return max(self.root.childrens, key=lambda x: x.visits).action
+    def __init__(self,state,p_num,play_moves,move,dep=1,par=None,last_opp_mov=None,last_my_mov=None):
+        self.visits=0
+        self.wins=0
+        self.losses=0
+        self.par=None
+        self.child=[]
+        self.player_num=p_num
+        self.moves=play_moves
+        self.par=par
+        self.last_move = move
+        self.is_expanded=False
+        self.is_terminal=False
+        self.opp_move=last_opp_mov
+        self.val=0
+        self.dep=dep
+        self.state=state
+        if move:
+            self.moves=modify(state,self.moves,move)
+            self.check()
+            # if last_opp_mov:
+            #     self.wins-=hex_manhattan_distance(move,last_opp_mov)*np.sqrt(self.dep**1.04)
+            # if last_my_mov:
+            #     self.wins-=hex_manhattan_distance(move,last_my_mov)*np.sqrt(self.dep**1.04)
+    def check(self):
+        ch=check_win(self.state,self.last_move,3-self.player_num)
+        if ch[0]:
+            self.is_terminal=True
+            self.val=-1
+        if len(self.moves)==0:
+            self.val=0
+            self.is_terminal=True
     
-class MCTS6tree:
-    def __init__(self, state, playerID, timer):
-        self.root = Node(state, playerID)
-        self.root.parent = None
-        self.UCB=0
-        self.player_number=playerID
-        self.timer = timer
-        self.filled = 0
-
-    def UCB1(self, node):
-        if node.visits == 0:
-            return np.inf
-        else:
-            return (node.value/node.visits) + C * math.sqrt(math.log(node.parent.visits) / node.visits)
+    def ucb(self):
+        if self.visits==0:
+            return 1e9
+        return ((self.wins-self.losses)/self.visits)+const*np.sqrt(np.log(self.par.visits)/(self.visits))
+    
+    def best_move(self):
+        return self.child[np.argmax(self.ucbs)]
         
-    def IfNeighbour(self, state, action):
-        i = action[0]
-        j = action[1]
-        neighbours = []
-        neighbours.append((i-1,j))
-        neighbours.append((i+1,j))
-        neighbours.append((i,j-1))
-        neighbours.append((i,j+1))
-        if j == 5:
-            neighbours.append((i-1,j-1))
-            neighbours.append((i-1,j+1))
-
-            neighbours.append((i-1,j-2))
-            neighbours.append((i-1,j+2))
-            neighbours.append((i-2,j-1))
-            neighbours.append((i-2,j+1))
-            neighbours.append((i+1,j-1))
-            neighbours.append((i+1,j+1))
-        elif j == 4:
-            neighbours.append((i-1,j-1))
-            neighbours.append((i+1,j+1))
-
-            neighbours.append((i-2,j-1))
-            neighbours.append((i-1,j+1))
-            neighbours.append((i,j+2))
-            neighbours.append((i+2,j+1))
-            neighbours.append((i+1,j-1))
-            neighbours.append((i-1,j-2))
-        elif j == 6:
-            neighbours.append((i+1,j-1))
-            neighbours.append((i-1,j+1))
-            
-            neighbours.append((i-2,j+1))
-            neighbours.append((i-1,j+1))
-            neighbours.append((i+1,j+1))
-            neighbours.append((i+2,j-1))
-            neighbours.append((i,j-2))
-            neighbours.append((i-1,j-1))
-        elif j < 4:
-            neighbours.append((i-1,j-1))
-            neighbours.append((i+1,j+1))
-
-            neighbours.append((i-1,j+1))
-            neighbours.append((i+1,j+2))
-            neighbours.append((i+2,j+1))
-            neighbours.append((i+1,j-1))
-            neighbours.append((i-1,j-2))
-            neighbours.append((i-2,j-1))
-        else:
-            neighbours.append((i+1,j-1))
-            neighbours.append((i-1,j+1))
-
-            neighbours.append((i-2,j+1))
-            neighbours.append((i-1,j+2))
-            neighbours.append((i+1,j+1))
-            neighbours.append((i+2,j-1))
-            neighbours.append((i+1,j-2))
-            neighbours.append((i-1,j-1))
-                    
-        for neighbour in neighbours:            
-            ni = neighbour[0]
-            nj = neighbour[1]
-            if ni >= 0 and  ni < state.shape[0] and nj >= 0 and nj < state.shape[1]:
-                if state[neighbour] == 1 or state[neighbour] == 2:
-                    return True
-
-        return False
+    def expand(self):
+        self.is_expanded=True
+        for move in self.moves:
+            new_state=self.state.copy()
+            new_state[move]=self.player_num
+            new_moves=self.moves.copy()
+            new_moves.remove(move)
+            self.child.append(Node(new_state,3-self.player_num,new_moves,move,self.dep+1,par=self,last_my_mov=self.opp_move,last_opp_mov=self.last_move))   
+        self.ucbs=[1e9 for _ in range(len(self.moves))]
+    
+    def get_win_ratio(self):
+        return self.visits+(self.wins/self.visits)
+    
+    def best_child(self):
+        ws=[ch.get_win_ratio() for ch in self.child]
+        return self.child[np.argmax(ws)]
+    
+    def upd(self):
+        self.ucbs=[ch.ucb() for ch in self.child]
         
-    def Rollout(self, node):
-        curr_node = Node(node.state, node.id)
-        curr_node.action = node.action
-        curr_node.valid_actions = list(get_valid_actions(curr_node.state))
-
-        while True:
-            res, type = check_win(curr_node.state, curr_node.action, 3 - curr_node.id, [])
-            if res:
-                if curr_node.id == self.player_number:
-                    return -1
-                else:
-                    return 1
-            if not curr_node.valid_actions:
-                return fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
-            rand_action = random.choice(curr_node.valid_actions)
-            curr_node.state[rand_action] = curr_node.id
-            curr_node.valid_actions.remove(rand_action)
-            old_id = curr_node.id
-            curr_node.id = 3 - old_id
-            curr_node.action = rand_action
-
-
-    def BackPropagating(self, curr_node, v):
-        while curr_node is not None:
-            if curr_node.id == self.player_number:
-                curr_node.value -= v
-            else:
-                curr_node.value += v
-            curr_node.visits += 1
-            curr_node = curr_node.parent
-        
-    def MCTS6(self):
-        self.root.valid_actions = list(get_valid_actions(self.root.state))
-        for action in self.root.valid_actions:
-            if self.IfNeighbour(self.root.state, action) and self.filled < 40:
-                new_node = Node(self.root.state, 3 - self.root.id, self.root)
-                new_node.state[action] = self.root.id
-                new_node.action = action
-                new_node.valid_actions = self.root.valid_actions.copy()
-                new_node.valid_actions.remove(action)
-                self.root.childrens.append(new_node)
-                res, type = check_win(new_node.state, action, self.root.id, [])
-                if res:
-                    return action
-            elif self.filled >= 40:
-                new_node = Node(self.root.state, 3 - self.root.id, self.root)
-                new_node.state[action] = self.root.id
-                new_node.action = action
-                new_node.valid_actions = self.root.valid_actions.copy()
-                new_node.valid_actions.remove(action)
-                self.root.childrens.append(new_node)
-                res, type = check_win(new_node.state, action, self.root.id, [])
-                if res:
-                    return action
-        for action in self.root.valid_actions:
-            opp_state = np.copy(self.root.state)
-            opp_state[action] = 3 - self.root.id
-            res, type = check_win(opp_state, action, 3 - self.root.id, [])
-            if res:
-                return action
-            
-        start_time = time.time()
-        iterations = 0
-        while True:
-            if time.time() - start_time > 18:
-                break
-            iterations += 1
-            curr_node = self.root
-            while curr_node.childrens:
-                for child in curr_node.childrens:
-                    child.ucb = self.UCB1(child)
-                curr_node = max(curr_node.childrens, key=lambda x: x.ucb)
-
-            if curr_node.visits == 0:
-                v = self.Rollout(curr_node)
-            else:
-                if not curr_node.valid_actions:
-                    v = fetch_remaining_time(self.timer, self.player_number)/fetch_remaining_time(self.timer, 3-self.player_number)
-                else:
-                    for action in curr_node.valid_actions:
-                        if self.IfNeighbour(curr_node.state, action) and self.filled < 40:
-                            new_node = Node(curr_node.state, 3 - curr_node.id, curr_node)
-                            new_node.state[action] = curr_node.id
-                            new_node.action = action
-                            new_node.valid_actions = curr_node.valid_actions.copy()
-                            new_node.valid_actions.remove(action)
-                            curr_node.childrens.append(new_node)
-                        elif self.filled >= 40:
-                            new_node = Node(curr_node.state, 3 - curr_node.id, curr_node)
-                            new_node.state[action] = curr_node.id
-                            new_node.action = action
-                            new_node.valid_actions = curr_node.valid_actions.copy()
-                            new_node.valid_actions.remove(action)
-                            curr_node.childrens.append(new_node)
-                    rand_child = random.choice(curr_node.childrens)
-                    v = self.Rollout(rand_child)
-                    curr_node = rand_child
-
-            self.BackPropagating(curr_node, v)
-        print(iterations)
-        return max(self.root.childrens, key=lambda x: x.visits).action
-
+    def print(self):
+        print(f"Player to move : {self.player_num}")
+        print(self.state)
+        print(f"wins: {self.wins}")
+        print(f"visits: {self.visits}")
+        print()
+    
 class AIPlayer:
 
     def __init__(self, player_number: int, timer):
@@ -320,8 +190,77 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
+        self.move=0
+        self.prev_move=None
 
+    def select(self,node:Node):
+        while node.is_expanded and not node.is_terminal:
+            node=node.best_move()
+        return node
     
+    def rollout(self,node:Node,p_type):
+        state=node.state.copy()
+        last_move=node.last_move
+        p_num=node.player_num
+        moves=node.moves.copy()
+        while(1):    
+            check=check_win(state,last_move,3-p_num)
+            if check[0]:
+                if p_num==p_type:
+                    return -1.0
+                else :
+                    return 1.0
+            if len(moves)==0:
+                return 0
+            num=np.random.choice(range(len(moves)))
+            last_move=moves[num]
+            moves.pop(num)
+            state[last_move]=p_num
+            p_num=3-p_num
+            
+        return 0
+        
+    def back_prop(self,node:Node,p_num,reward):
+        while node:
+            if node.player_num==p_num:
+                if reward==1.0:
+                    node.losses+=1.0
+                else:
+                    node.wins+=1.0
+            else:
+                if reward==1.0:
+                    node.wins += 1.0
+                else:
+                    node.losses += 1.0
+            node.visits+=1
+            if node.is_expanded:
+                node.upd()
+            node = node.par
+            
+    def mcts(self,state):
+        start=time.time()
+        moves=get_valid_actions2(state)
+        print(f"moves at root :{len(moves)}")
+        # print(moves)
+        root=Node(state,self.player_number,moves,None)
+        p_type = root.player_num
+        it=0
+        while time.time()-start<self.max_t-0.1:
+            it+=1
+            node=self.select(root)
+            if node.is_terminal:
+                if node.player_num==self.player_number:
+                    self.back_prop(node,self.player_number,node.val)
+                else:
+                    self.back_prop(node,self.player_number,-1*node.val)
+            else:
+                node.expand()
+                child:Node=random.choice(node.child)
+                reward=self.rollout(child,p_type)
+                self.back_prop(child,p_type,reward)
+        print(f"iterations are {it}")
+        return root.best_child().last_move
+                
     def get_move(self, state: np.array) -> Tuple[int, int]:
         """
         Given the current state of the board, return the next move
@@ -338,17 +277,57 @@ class AIPlayer:
         # Returns
         Tuple[int, int]: action (coordinates of a board cell)
         """
-        if state.shape[0] == 11:
-            mcts = MCTS6tree(state, self.player_number, self.timer)
-            for i in range(11):
-                for j in range(11):
-                    if state[i][j] == 1 or state[i][j] == 2:
-                        mcts.filled += 1
-            if mcts.filled == 0:
-                return (0,0)
-            move = mcts.MCTS6()
-            return move
+        global moved
+        global const
+        global rem_moves
+        rem_moves=set(get_valid_actions(state))
+        print(f"move num {moved}")
+        self.max_t = 12
+        if moved > 2:
+            self.max_t = 15.5
+            if moved>6:
+                self.max_t=21.5
+                if moved > 10:
+                    self.max_t = 22.5
+                    if moved > 15:
+                        self.max_t = 19.5
+                        if moved > 20:
+                            self.max_t = 15
+                            if moved>25:
+                                self.max_t = 8
+                                if moved>30:
+                                    self.max_t=4
+ 
+        best_move=None
+        start_move=(0,5)
+        if moved==0:
+            if state[start_move]==0:
+                best_move=start_move
+            else:
+                best_move=(0,10) 
         else:
-            mcts = MCTStree(state, self.player_number, self.timer)
-            move = mcts.MCTS()
-            return move
+            found = False
+            if moved>3:
+                next_moves = get_valid_actions(state,3-self.player_number)
+                for i in next_moves:
+                    state[i] = self.player_number
+                    check=check_win(state,i,self.player_number)
+                    if check[0]:
+                        best_move = i
+                        found  = True
+                        break
+                    state[i] = 0
+                if not found:
+                    for i in next_moves:
+                        state[i] = 3 - self.player_number
+                        check=check_win(state,i,3-self.player_number)
+                        if check[0]:
+                            best_move = i
+                            found  = True
+                            break
+                        state[i] = 0
+            if not found:
+                best_move=self.mcts(state)
+        
+        moved+=1
+        return best_move
