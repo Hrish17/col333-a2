@@ -182,20 +182,31 @@ class AIPlayer:
                 return 5
         return 0
 
-    def to_be_moved_in_6(self, board, action, choice):
+    def to_be_moved_in_6(self, board, action):
         x, y = action[0], action[1]
         dims = board.shape[0]
-        dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
+        dirs_closest = []
         dirs_kite = [(-2, -1), (-2, 1), (-1, 2), (1, 1), (1, -1), (-1, -2)]
-        dirs_next_to_kite = [(-2, 0), (-2, 2), (0, 2),
-                             (2, 0), (0, -2), (-2, -2)]
-        dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),
-                    (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
+        # dirs_next_to_kite = [(-2, 0), (-2, 2), (0, 2),(2, 0), (0, -2), (-2, -2)]
+        # dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),(-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
+        if (y == (dims-1)/2):
+            dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
+            dirs_kite = [(-2, -1), (-2, 1), (-1, 2), (1, 1), (1, -1), (-1, -2)]
+        elif (y < (dims-1)/2):
+            dirs_closest = [(-1, 0), (0, 1), (1, 1), (1, 0), (0, -1), (-1, -1)]
+            dirs_kite = [(-1,1),(1,2),(2,1),(1,-1),(-1,-2),(-2,-1)]
+            if (y == (dims - 1)/2 - 1):
+                dirs_kite = [(-1,1),(0,2),(2,1),(1,-1),(-1,-2),(-2,-1)]
+        elif (y > (dims-1)/2):
+            dirs_closest = [(-1, 0), (-1, 1), (0, 1), (1, 0), (1, -1), (0, -1)]
+            dirs_kite = [(-2,1),(-1,2),(1,1),(2,-1),(1,-2),(-1,-1)]
+            if (y == (dims - 1)/2 + 1):
+                dirs_kite = [(-2,1),(-1,2),(1,1),(2,-1),(0,-2),(-1,-1)]
         dirs = dirs_closest + dirs_kite
-        if (choice >= 2):
-            dirs += dirs_next_to_kite
-        if (choice >= 3):
-            dirs += dirs_far
+        # if (choice >= 2):
+        #     dirs += dirs_next_to_kite
+        # if (choice >= 3):
+        #     dirs += dirs_far
         for dir in dirs:
             if (is_valid(x+dir[0], y+dir[1], dims) and (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2)):
                 return True
@@ -211,16 +222,8 @@ class AIPlayer:
         root.possible_actions = possible_actions
 
         for action in possible_actions:
-            if (state.shape[0] == 11):
-                if (self.moves_played <= 5):
-                    if (not self.to_be_moved_in_6(state, action, 1)):
-                        continue
-                elif (self.moves_played <= 10):
-                    if (not self.to_be_moved_in_6(state, action, 2)):
-                        continue
-                elif (self.moves_played <= 15):
-                    if (not self.to_be_moved_in_6(state, action, 3)):
-                        continue
+            if (state.shape[0] == 11 and self.moves_played <= 10 and not self.to_be_moved_in_6(state, action)):
+                continue
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(state, action, self.player_number)
             hasWon, _ = check_win(child.state, action, self.player_number)
@@ -265,16 +268,8 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        if (state.shape[0] == 11):
-                            if (self.moves_played <= 5):
-                                if (not self.to_be_moved_in_6(state, action, 1)):
-                                    continue
-                            elif (self.moves_played <= 10):
-                                if (not self.to_be_moved_in_6(state, action, 2)):
-                                    continue
-                            elif (self.moves_played <= 15):
-                                if (not self.to_be_moved_in_6(state, action, 3)):
-                                    continue
+                        if (state.shape[0] == 11 and self.moves_played <= 10 and not self.to_be_moved_in_6(state, action)):
+                            continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
                             node.state, action, self.player_number)
