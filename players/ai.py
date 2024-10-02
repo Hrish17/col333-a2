@@ -256,15 +256,15 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        if (moves_played <= 6):
-                            if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
-                                continue
-                        elif (moves_played <= 12):
-                            if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
-                                continue
-                        elif (moves_played <= 20):
-                            if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
-                                continue
+                        # if (moves_played <= 6):
+                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 1)):
+                        #         continue
+                        # elif (moves_played <= 12):
+                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 2)):
+                        #         continue
+                        # elif (moves_played <= 20):
+                        #     if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action, 3)):
+                        #         continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
                             node.state, action, self.player_number)
@@ -306,7 +306,7 @@ class AIPlayer:
             hasWon, _ = check_win(
                 current_state, current_node.action, 3-current_player)
             if hasWon:
-                return -100 if current_player == self.player_number else 1
+                return -100 if current_player == self.player_number else 100
             # possible_actions = get_valid_actions(current_state)
             possible_actions = current_node.possible_actions.copy()
             if not possible_actions:
