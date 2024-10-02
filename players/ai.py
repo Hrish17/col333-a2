@@ -306,7 +306,7 @@ class AIPlayer:
             hasWon, _ = check_win(
                 current_state, current_node.action, 3-current_player)
             if hasWon:
-                return -1 if current_player == self.player_number else 1
+                return -100 if current_player == self.player_number else 1
             # possible_actions = get_valid_actions(current_state)
             possible_actions = current_node.possible_actions.copy()
             if not possible_actions:
