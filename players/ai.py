@@ -182,7 +182,7 @@ class AIPlayer:
                              (2, 0), (0, -2), (-2, -2)]
         dirs_far = [(-3, -2), (-3, -1), (-3, 1), (-3, 2), (-2, 3),
                     (-1, 3), (1, 2), (2, 1), (2, -1), (1, -2), (-1, -3), (-2, -3)]
-        dirs = dirs_closest + dirs_kite + dirs_next_to_kite + dirs_far
+        dirs = dirs_closest + dirs_kite + dirs_next_to_kite
         for dir in dirs:
             if (is_valid(x+dir[0], y+dir[1], dims) and (board[x+dir[0], y+dir[1]] == 1 or board[x+dir[0], y+dir[1]] == 2)):
                 return True
@@ -199,7 +199,7 @@ class AIPlayer:
         moves_played = len(np.argwhere(state == self.player_number))
 
         for action in possible_actions:
-            if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action) and moves_played <= 6):
+            if (state.shape[0] == 11 and moves_played <= 6 and not self.to_be_moved_in_6(state, action)):
                 continue
             child = MCTS_Node(0, 0)
             child.state = self.get_next_state(
@@ -244,7 +244,7 @@ class AIPlayer:
                     value = 0.5
                 else:
                     for action in possible_actions:
-                        if (state.shape[0] == 11 and not self.to_be_moved_in_6(state, action) and moves_played <= 6):
+                        if (state.shape[0] == 11 and moves_played <= 6 and not self.to_be_moved_in_6(state, action)):
                             continue
                         child = MCTS_Node(0, 0)
                         child.state = self.get_next_state(
