@@ -6,6 +6,7 @@ import copy
 from helper import *
 
 C = 1.4
+opp_type = "random"
 
 class Node:
     def __init__(self, state, playerID, parent=None):
@@ -27,6 +28,7 @@ class MCTStree:
         self.UCB=0
         self.player_number=playerID
         self.timer = timer
+        self.filled = 0
 
     def UCB1(self, node):
         if node.visits == 0:
@@ -88,8 +90,26 @@ class MCTStree:
         start_time = time.time()
         iterations = 0
         while True:
-            if time.time() - start_time > 18:
-                break
+            if opp_type == "random":
+                if self.filled < 10:
+                    if time.time() - start_time > 10:
+                        break
+                elif self.filled < 30:
+                    if time.time() - start_time > 12:
+                        break
+                else:
+                    if time.time() - start_time > 5:
+                        break
+            else:
+                if self.filled < 10:
+                    if time.time() - start_time > 20:
+                        break
+                elif self.filled < 30:
+                    if time.time() - start_time > 22:
+                        break
+                else:
+                    if time.time() - start_time > 10:
+                        break
             iterations += 1
             curr_node = self.root
             while curr_node.childrens:
@@ -265,8 +285,18 @@ class MCTS6tree:
         start_time = time.time()
         iterations = 0
         while True:
-            if time.time() - start_time > 18:
-                break
+            if self.filled < 10:
+                if time.time() - start_time > 12:
+                    break
+            elif self.filled < 40:
+                if time.time() - start_time > 13:
+                    break
+            elif self.filled < 70:
+                if time.time() - start_time > 12:
+                    break
+            else:
+                if time.time() - start_time > 5:
+                    break
             iterations += 1
             curr_node = self.root
             while curr_node.childrens:
@@ -320,6 +350,10 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}: ai'.format(player_number)
         self.timer = timer
+        if fetch_remaining_time(self.timer, self.player_number) > 400:
+            opp_type = "student"
+        elif fetch_remaining_time(self.timer, self.player_number) > 300:
+            opp_type = "ta"
 
     
     def get_move(self, state: np.array) -> Tuple[int, int]:
@@ -350,5 +384,12 @@ class AIPlayer:
             return move
         else:
             mcts = MCTStree(state, self.player_number, self.timer)
+            for i in range(7):
+                for j in range(7):
+                    if state[i][j] == 1 or state[i][j] == 2:
+                        mcts.filled += 1
+            if mcts.filled == 0:
+                return (0,0)
             move = mcts.MCTS()
             return move
+        

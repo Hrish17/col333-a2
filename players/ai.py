@@ -323,7 +323,7 @@ class AIPlayer:
 
         best_node = max(root.children, key=lambda x: x.visits)
         # print("flag 3")
-        print('Iterations:', iterations)
+        # print('Iterations:', iterations)
         return best_node.action
 
     def traverse(self, node: MCTS_Node) -> MCTS_Node:
@@ -337,7 +337,7 @@ class AIPlayer:
         current_node.state = current_state
         current_node.player = node.player
         current_node.action = node.action
-        current_node.possible_actions = node.possible_actions.copy()
+        current_node.possible_actions = list(node.possible_actions)
 
         while True:
             hasWon, _ = check_win(current_state, current_node.action, 3-current_node.player)
