@@ -72,7 +72,7 @@ class AIPlayer:
             # if the opponent played on a corner
             x, y = np.argwhere(state == 3 - self.player_number)[0]
             is_corner = get_corner((x, y), state.shape[0])
-            if is_corner != 0:
+            if is_corner != -1:
                 if (x, y) == (0, 0):
                     return (0, 3)
                 elif (x, y) == (0, 3):
