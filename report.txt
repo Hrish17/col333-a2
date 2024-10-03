@@ -1,0 +1,59 @@
+Hrishabh Sangwaiya (2022CS11625), Ankit Kumar Meena (2022CS11131)
+
+Objective:
+To implement a game playing agent for the game of Havannah.
+
+Approach:
+We have used Monte Carlo Tree Search (MCTS) algorithm to implement the game playing agent. 
+Why MCTS? 
+It is because the search space of havannah is very large and it is not possible to search the entire space.
+MCTS is a best-first search algorithm that uses random sampling to estimate the value of each node in the search tree.
+
+Brief Description of MCTS:
+1. Selection: Start from the root node and select the child node with the highest UCB1 value until a leaf node is reached.
+UCB1 value is calculated as follows:
+UCB1 = (vi/ni) + c * sqrt(ln(N)/ni)
+where,
+vi = value of the node, ni = number of times the node is visited,
+N = number of times the parent node is visited, c = exploration parameter.
+We have used c = 1.414. After experimenting with different values, we found this value to be the best.
+
+2. Expansion: If the leaf node is not a terminal node, expand it by adding one or more child nodes.
+3. Simulation/Rollout: Simulate a random game from the current state until a terminal state is reached.
+4. Backpropagation: Update the statistics of all nodes in the path from the root to the leaf node.
+
+Challenges faced:
+1. The first challenge was to implement the MCTS for havannah.
+2. Time constraint was another challenge. The performance of MCTS directly depends on the number of iterations it runs and that
+depends upon the time taken.
+3. The large search space of size 6 game as compared to the size 4 game. So, there was a need to narrow down it.
+4. To apply the game knowledge in the game playing agent
+
+For Board Size of 4:
+For this we have used simple MCTS. Because the search space is small so we focussed on optimizing our implementation of MCTS
+algorithm. Some of the oprimizations which we made are:
+- Fixed the beginning move (taking a corner if we play first and try to block opponent if he takes one of the corners)
+- Calling the get_valid_actions function once only as the possible actions of the child would be a subset of the possible 
+moves of the parent. So, we store in the MCTS node and update it.
+- Not creating new nodes during rollout and just updating the initial node as they are not needed as go down the tree.
+- We have divided the time optimally. For playing with random agent we have given 10 seconds to each move. For playing against 
+the agent of TA we have give 21 seconds for initial 5 moves and then 23 seconds for the next 7 moves and finally 15 seconds for
+the rest of the moves. It is because initially the search space is large and during the mid game we have given more time as it
+is the part that makes the difference in the game and finally we have given less time as the search space is small.
+
+For Board Size of 6:
+For this part also we have used the above oprimizations with some difference in dividing the time. But that was not enough.
+Simple MCTS was not able to perform well. So, we used the game knowledge to improve the performance of the agent by 
+implementing them as heuristics. We have implemented the following heuristics:
+1. Kite formation/ Virtual connection: We have implemented the kite formation heuristic. It is a formation of a kite like 
+structure which is not directly connected but it is almost always possible to connect them. So, we have given some initial
+weight to such positions as heuristics.
+2. Confirm Kite formation: We have implemented the confirm kite formation heuristic. If the opponent occupies of the two
+positions between the kite positions, then we need to occupy the second position which confirms the connection of the kite.
+3. Reducing the search space for the initial moves: We have reduced the search space for the initial 10 moves. We only explore
+neighboring positions and kite positions of the positions which are already occupied(by both the players).
+
+If in any of the 2 board sizes, if there is a winning move, then we play that move rather than searching for the best move using
+MCTS. And if there is no winning move, but there is a move which can block the opponent from winning, then we play that move.
+This prevents us making straight-forward blunders.
+
